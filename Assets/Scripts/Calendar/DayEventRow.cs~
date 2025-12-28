@@ -1,0 +1,36 @@
+using TMPro;
+using UnityEngine;
+using System;
+using LocalCalendar.Models;
+
+namespace LocalCalendar.Calendar
+{
+    public class DayEventRow : MonoBehaviour
+    {
+        [SerializeField] private TextMeshProUGUI timeLabel;
+        [SerializeField] private TextMeshProUGUI titleLabel;
+
+        private CalendarItem _item;
+        private Action<CalendarItem> _onClick;
+
+        public void Initialize(CalendarItem item, Action<CalendarItem> onClick)
+        {
+            _item = item;
+            _onClick = onClick;
+
+            if (item.AllDay)
+                timeLabel.text = "All day";
+            else
+                timeLabel.text = item.StartUtc.ToLocalTime().ToString("HH:mm");
+
+            titleLabel.text = item.Title;
+        }
+
+        public void OnClick()
+        {
+            Debug.Log("Clicked item: " + _item.Title);
+            // open EditItemScene
+            _onClick?.Invoke(_item);
+        }
+    }
+}

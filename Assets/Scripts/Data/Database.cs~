@@ -1,0 +1,52 @@
+using System.IO;
+using Mono.Data.Sqlite;
+using UnityEngine;
+
+namespace LocalCalendar.Data
+{
+    public static class Database
+    {
+        public static string ConnectionString
+        {
+            get
+            {
+                string path = Path.Combine(Application.persistentDataPath, "calendar.db");
+                return $"URI=file:{path}";
+            }
+        }
+
+        public static void Initialize()
+        {
+            using var conn = new SqliteConnection(ConnectionString);
+            conn.Open();
+
+            using var cmd = conn.CreateCommand();
+
+            cmd.CommandText =
+            @"
+            CREATE TABLE IF NOT EXISTS CalendarItems (
+                Id TEXT PRIMARY KEY,
+                Type INTEGER,
+                Title TEXT,
+                Note TEXT,
+                StartUtc INTEGER,
+                EndUtc INTEGER,
+                AllDay INTEGER
+            );
+
+            CREATE TABLE IF NOT EXISTS RepeatRules (
+                ItemId TEXT,
+                Interval INTEGER,
+                Unit INTEGER,
+                UntilUtc INTEGER
+            );
+
+            CREATE TABLE IF NOT EXISTS Reminders (
+                ItemId TEXT,
+                OffsetSeconds INTEGER
+            );
+            ";
+            cmd.ExecuteNonQuery();
+        }
+    }
+}
