@@ -48,6 +48,18 @@ namespace LocalCalendar.Data
             });
         }
 
+        public void Delete(string id)
+        {
+            var db = Database.Connection;
+
+            db.RunInTransaction(() =>
+            {
+                db.Delete<CalendarItemRow>(id);
+                db.Delete<RepeatRuleRow>(id);
+                db.Delete<ReminderRow>(id);
+            });
+        }
+
         public List<CalendarItem> GetAll()
         {
             var db = Database.Connection;
