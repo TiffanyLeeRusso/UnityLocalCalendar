@@ -1,7 +1,7 @@
 using TMPro;
 using UnityEngine;
 using System;
-using LocalCalendar.Models;
+using LocalCalendar.Data;
 
 namespace LocalCalendar.Calendar
 {

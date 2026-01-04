@@ -51,6 +51,11 @@ namespace LocalCalendar.Calendar
             RefreshMonth();
         }
 
+        public void Today() {
+            _currentMonth = DateTime.Today;
+            RefreshMonth();
+        }
+        
         private void RefreshMonth()
         {
             ClearGrid();
@@ -112,6 +117,11 @@ namespace LocalCalendar.Calendar
         public void OpenSchedule()
         {
             SceneManager.LoadScene("ScheduleScene");
+        }
+
+        public void OpenSettings()
+        {
+            SceneManager.LoadScene("SettingsScene");
         }
     }
 }

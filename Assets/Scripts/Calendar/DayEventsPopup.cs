@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using LocalCalendar.App;
-using LocalCalendar.Models;
+using LocalCalendar.Data;
 using UnityEngine.SceneManagement;
 
 namespace LocalCalendar.Calendar
