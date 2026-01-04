@@ -36,7 +36,8 @@ namespace LocalCalendar.EditItem
             minuteDropdown.ClearOptions();
 
             var options = new List<string>();
-            foreach (var m in minuteSteps)
+            //foreach (var m in minuteSteps)
+            for(var m = 0; m < 60; m++)
                 options.Add(m.ToString("00"));
 
             minuteDropdown.AddOptions(options);

@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using LocalCalendar.Data;
 using LocalCalendar.Models;
 using LocalCalendar.App;
+using LocalCalendar.Notifications;
 
 namespace LocalCalendar.EditItem
 {
@@ -106,6 +107,9 @@ namespace LocalCalendar.EditItem
             {
                 var item = BuildItemFromUI();
                 _repo.Save(item);
+                NotificationScheduler.Cancel(_item); // cancel old if editing
+                NotificationScheduler.Schedule(item);
+
                 EditItemContext.Clear();
                 CalendarRefreshSignal.NeedsRefresh = true;
                 SceneManager.LoadScene("CalendarScene");
@@ -127,6 +131,7 @@ namespace LocalCalendar.EditItem
             if (string.IsNullOrEmpty(EditItemContext.EditingItemId))
                 return;
 
+            NotificationScheduler.Cancel(_item);
             _repo.Delete(EditItemContext.EditingItemId);
 
             CalendarRefreshSignal.NeedsRefresh = true;
