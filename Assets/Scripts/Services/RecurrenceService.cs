@@ -40,5 +40,38 @@ namespace LocalCalendar.Services
                     break;
             }
         }
+
+        public static IEnumerable<DateTime> GetUpcomingOccurrences(
+            CalendarItem item,
+            int maxCount)
+        {
+            DateTime next = item.StartUtc;
+            int count = 0;
+
+            while (count < maxCount)
+            {
+                if (item.RepeatRule.UntilUtc.HasValue &&
+                    next > item.RepeatRule.UntilUtc.Value)
+                    yield break;
+
+                if (next > DateTime.UtcNow)
+                    yield return next;
+
+                next = AddInterval(next, item.RepeatRule);
+                count++;
+            }
+        }
+
+        static DateTime AddInterval(DateTime dt, RepeatRule rule)
+        {
+            return rule.Unit switch
+            {
+                RepeatUnit.Day => dt.AddDays(rule.Interval),
+                    RepeatUnit.Week => dt.AddDays(7 * rule.Interval),
+                    RepeatUnit.Month => dt.AddMonths(rule.Interval),
+                    RepeatUnit.Year => dt.AddYears(rule.Interval),
+                    _ => dt
+                    };
+        }
     }
 }
