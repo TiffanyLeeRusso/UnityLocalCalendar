@@ -10,7 +10,7 @@ namespace LocalCalendar.Calendar
 {
     public class DayEventsPopup : MonoBehaviour
     {
-        [SerializeField] private TextMeshProUGUI dateLabel;
+        [SerializeField] private TMP_InputField dateLabel;
         [SerializeField] private Transform content;
         [SerializeField] private DayEventRow rowPrefab;
 
@@ -32,7 +32,7 @@ namespace LocalCalendar.Calendar
             foreach (var item in items)
             {
                 var row = Instantiate(rowPrefab, content);
-                row.Initialize(item, OnItemClicked);
+                row.Initialize(item, date, OnItemClicked);
             }
         }
 

@@ -9,7 +9,8 @@ namespace LocalCalendar.Calendar
     {
         [SerializeField] private TextMeshProUGUI dayNumber;
         [SerializeField] private Image background;
-        [SerializeField] private GameObject marker;
+        [SerializeField] private GameObject marker; // TODO: actual preview of items instead of just marking that some exist
+        [SerializeField] private GameObject repeatIcon;
 
         private DateTime _date;
         private Action<DateTime> _onClick;
@@ -26,6 +27,7 @@ namespace LocalCalendar.Calendar
             dayNumber.gameObject.SetActive(true);
             dayNumber.text = date.Day.ToString();
             marker.SetActive(hasItems);
+            //repeatIcon.SetActive(_item.RepeatRule != null);
 
             background.color = isToday
                 ? new Color(0.5f, 0.3f, 0.9f)
