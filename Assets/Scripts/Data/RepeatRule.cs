@@ -1,6 +1,6 @@
 using System;
 
-namespace LocalCalendar.Models
+namespace LocalCalendar.Data
 {
     public enum RepeatUnit
     {
