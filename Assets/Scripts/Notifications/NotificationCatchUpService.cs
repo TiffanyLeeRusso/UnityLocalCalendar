@@ -10,26 +10,12 @@ namespace LocalCalendar.Notifications
         public static void Run()
         {
             var repo = new CalendarRepository();
-            var items = repo.GetAll();
+            var items = repo.GetAllCalendarItems();
 
             foreach (var item in items)
             {
-                if (item.Type != CalendarItemType.Reminder || item.Reminder == null)
-                    continue;
-
-                DateTime intendedUtc = item.StartUtc + item.Reminder.Offset;
-                DateTime nowUtc = DateTime.UtcNow;
-
-                // Missed but still relevant (within last 10 min)
-                if (intendedUtc < nowUtc &&
-                    intendedUtc > nowUtc.AddMinutes(-10))
-                {
+                if(NotificationScheduler.isCurrentReminder(item, true))
                     FireImmediate(item);
-                }
-                else if (intendedUtc > nowUtc)
-                {
-                    NotificationScheduler.Schedule(item);
-                }
             }
         }
 

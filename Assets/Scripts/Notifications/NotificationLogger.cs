@@ -1,79 +1,54 @@
-using System.Collections.Generic;
 using UnityEngine;
+using LocalCalendar.Services;
 using System.Text;
 
 namespace LocalCalendar.Notifications
 {
     public static class NotificationLogger
     {
-        private const int MaxEntries = 50;
-        private static readonly List<NotificationLogEntry> Entries = new();
-
         public static void Log(NotificationLogEntry entry)
         {
-            if (Entries.Count >= MaxEntries)
-                Entries.RemoveAt(0);
-
-            Entries.Add(entry);
+            LoggingService.Info(LogCategory.Notification,
+                                DumpToString(entry));
         }
 
-        public static IReadOnlyList<NotificationLogEntry> GetEntries()
-        {
-            return Entries;
-        }
-
-        public static void Clear()
-        {
-            Entries.Clear();
-        }
-
-        public static string DumpToString()
+        public static string DumpToString(NotificationLogEntry e)
         {
             var sb = new StringBuilder();
 
-            sb.AppendLine("=== Notification Diagnostics ===");
-            sb.AppendLine($"Entries: {Entries.Count}");
-            sb.AppendLine($"Now (local): {System.DateTime.Now}");
-            sb.AppendLine();
+            sb.AppendLine($"Title: {e.Title}");
 
-            foreach (var e in Entries)
+            if (!string.IsNullOrEmpty(e.ItemId))
+                sb.AppendLine($"ItemId: {e.ItemId}");
+
+            sb.AppendLine($"Intended (UTC): {e.IntendedUtc}");
+
+            sb.AppendLine($"Scheduled (local): {e.ScheduledLocal}");
+
+            if (e.FiredLocal.HasValue)
             {
-                sb.AppendLine("— — — — — — — — — — —");
-                sb.AppendLine($"Title: {e.Title}");
+                sb.AppendLine($"Fired (local): {e.FiredLocal.Value}");
 
-                if (!string.IsNullOrEmpty(e.ItemId))
-                    sb.AppendLine($"ItemId: {e.ItemId}");
-
-                sb.AppendLine($"Intended (UTC): {e.IntendedUtc}");
-
-                sb.AppendLine($"Scheduled (local): {e.ScheduledLocal}");
-
-                if (e.FiredLocal.HasValue)
+                if (e.IntendedUtc != default)
                 {
-                    sb.AppendLine($"Fired (local): {e.FiredLocal.Value}");
+                    var drift =
+                        e.FiredLocal.Value -
+                        e.IntendedUtc.ToLocalTime();
 
-                    if (e.IntendedUtc != default)
-                    {
-                        var drift =
-                            e.FiredLocal.Value -
-                            e.IntendedUtc.ToLocalTime();
-
-                        sb.AppendLine($"Drift: {drift.TotalMinutes:+0.0;-0.0} min");
-                    }
+                    sb.AppendLine($"Drift: {drift.TotalMinutes:+0.0;-0.0} min");
                 }
-                else
-                {
-                    sb.AppendLine("Fired: —");
-                }
-
-                if (!string.IsNullOrEmpty(e.Note))
-                    sb.AppendLine($"Note: {e.Note}");
-
-                sb.AppendLine();
             }
+            else
+            {
+                sb.AppendLine("Fired: —");
+            }
+
+            if (!string.IsNullOrEmpty(e.Note))
+                sb.AppendLine($"Note: {e.Note}");
+
+            sb.AppendLine();
 
             return sb.ToString();
         }
-
     }
 }
