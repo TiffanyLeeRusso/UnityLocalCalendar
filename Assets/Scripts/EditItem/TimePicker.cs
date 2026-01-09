@@ -12,12 +12,18 @@ namespace LocalCalendar.EditItem
         [SerializeField] private TMP_Dropdown minuteDropdown;
         [SerializeField] private Toggle amPmToggle; // off = AM, on = PM
 
-        private readonly int[] minuteSteps = { 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55 };
+        public event Action<DateTime> OnTimeChanged;
+
+        private bool _suppressEvents;
 
         void Awake()
         {
             PopulateHours();
             PopulateMinutes();
+
+            hourDropdown.onValueChanged.AddListener(_ => NotifyChanged());
+            minuteDropdown.onValueChanged.AddListener(_ => NotifyChanged());
+            amPmToggle.onValueChanged.AddListener(_ => NotifyChanged());
         }
 
         private void PopulateHours()
@@ -36,18 +42,16 @@ namespace LocalCalendar.EditItem
             minuteDropdown.ClearOptions();
 
             var options = new List<string>();
-            //foreach (var m in minuteSteps)
-            for(var m = 0; m < 60; m++)
+            for (int m = 0; m < 60; m++)
                 options.Add(m.ToString("00"));
 
             minuteDropdown.AddOptions(options);
         }
 
-        /// <summary>
-        /// Set picker UI from a DateTime (local time).
-        /// </summary>
         public void SetTime(DateTime time)
         {
+            _suppressEvents = true;
+
             int hour24 = time.Hour;
             int minute = time.Minute;
 
@@ -56,27 +60,31 @@ namespace LocalCalendar.EditItem
             if (hour12 == 0) hour12 = 12;
 
             hourDropdown.value = hour12 - 1;
+            minuteDropdown.value = Mathf.Clamp(minute, 0, 59);
             amPmToggle.isOn = isPm;
 
-            int minuteIndex = Array.IndexOf(minuteSteps, (minute / 5) * 5);
-            if (minuteIndex < 0) minuteIndex = 0;
-
-            minuteDropdown.value = minuteIndex;
+            _suppressEvents = false;
         }
 
-        /// <summary>
-        /// Get selected time as a TimeSpan.
-        /// </summary>
         public TimeSpan GetTime()
         {
             int hour12 = hourDropdown.value + 1;
-            int minute = minuteSteps[minuteDropdown.value];
+            int minute = minuteDropdown.value;
             bool isPm = amPmToggle.isOn;
 
             int hour24 = hour12 % 12;
             if (isPm) hour24 += 12;
 
             return new TimeSpan(hour24, minute, 0);
+        }
+
+        private void NotifyChanged()
+        {
+            if (_suppressEvents)
+                return;
+
+            // Date portion is ignored by controller
+            OnTimeChanged?.Invoke(DateTime.Today + GetTime());
         }
     }
 }
