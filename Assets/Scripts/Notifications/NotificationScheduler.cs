@@ -7,29 +7,34 @@ using System;
 
 namespace LocalCalendar.Notifications
 {
+    public enum ReminderTiming
+    {
+        Invalid,        // not a reminder / missing data
+        Past,           // already happened, ignore
+        Late,           // recently missed, fire immediately
+        Future          // valid future reminder
+    }
+
     public static class NotificationScheduler
     {
-        public static bool isCurrentReminder(CalendarItem item, bool includeRecentPast = false)
+        public static ReminderTiming GetReminderTiming(CalendarItem item)
         {
             if (item.Type != CalendarItemType.Reminder || item.Reminder == null)
-                return false;
+                return ReminderTiming.Invalid;
 
             DateTime nowUtc = DateTime.UtcNow;
             DateTime intendedUtc = item.StartUtc + item.Reminder.Offset;
 
-            // Missed but still relevant (within last 10 min)
-            if (includeRecentPast &&
-                intendedUtc < nowUtc &&
-                intendedUtc > nowUtc.AddMinutes(-10))
-            {
-                return true;
-            }
+            // Past (too old — never fire)
+            if (intendedUtc <= nowUtc.AddMinutes(-10))
+                return ReminderTiming.Past;
 
-            // Never schedule notifications from the past
+            // Late but still relevant
             if (intendedUtc <= nowUtc)
-                return false;
+                return ReminderTiming.Late;
 
-            return true;
+            // Future
+            return ReminderTiming.Future;
         }
 
         public static void Schedule(CalendarItem item)
@@ -51,6 +56,19 @@ namespace LocalCalendar.Notifications
             }
         }
 
+        public static void FireImmediate(CalendarItem item)
+        {
+            NotificationLogger.Log(new NotificationLogEntry
+            {
+                ItemId = item.Id,
+                Title = item.Title,
+                IntendedUtc = item.StartUtc + item.Reminder.Offset,
+                ScheduledLocal = item.StartUtc.ToLocalTime(),
+                Note = "Immediately firing late notification"
+            });
+            ScheduleSingleNotification(item, DateTime.Now.AddSeconds(2));
+        }
+
         private static void ScheduleSingleNotification(CalendarItem item, DateTime startUtc)
         {
             // Exact time commented out. Since Android does not guarantee exact delivery time
@@ -60,7 +78,7 @@ namespace LocalCalendar.Notifications
                 .FirstOrDefault()
                 .ToUniversalTime();*/
             DateTime fireTimeUtc =
-                item.StartUtc
+                startUtc
                 + item.Reminder.Offset
                 - TimeSpan.FromMinutes(NotificationSettings.EarlyFireBufferMinutes);
             if (fireTimeUtc <= DateTime.UtcNow)
