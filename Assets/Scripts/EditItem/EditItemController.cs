@@ -83,7 +83,8 @@ namespace LocalCalendar.EditItem
 
             // clamp to same day
             var endOfDay = newStart.Date.AddDays(1).AddMinutes(-1);
-            if (newEnd > endOfDay)
+            //if (newEnd > endOfDay)
+            if (newEnd.Date > newStart.Date)
               newEnd = endOfDay;
 
             endTimePicker.SetTime(newEnd);
@@ -99,7 +100,13 @@ namespace LocalCalendar.EditItem
             var duration = newEnd - start;
 
             if (duration > TimeSpan.Zero)
+            {
               _lastDuration = duration;
+            }
+            else
+            {
+                _lastDuration = TimeSpan.FromHours(1);
+            }
         }
 
         private DateTime GetStartDateTime()
@@ -209,6 +216,7 @@ namespace LocalCalendar.EditItem
 
             NotificationScheduler.Cancel(_item);
             _repo.Delete(EditItemContext.EditingItemId);
+            EditItemContext.Clear();
 
             CalendarRefreshSignal.NeedsRefresh = true;
             SceneManager.LoadScene("CalendarScene");
@@ -225,6 +233,7 @@ namespace LocalCalendar.EditItem
             var endLocal = _item.EndUtc.ToLocalTime();
             dateInput.text = startLocal.ToString("yyyy-MM-dd");
             endDateInput.text = endLocal.ToString("yyyy-MM-dd");
+            _lastDuration = endLocal - startLocal;
 
             // All Day
             allDayToggle.isOn = _item.AllDay;
