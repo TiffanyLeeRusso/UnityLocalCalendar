@@ -32,7 +32,6 @@ namespace LocalCalendar.App
         {
             // Schedule notifications once per app launch
             RescheduleNotifications();
-            NotificationCatchUpService.Run();
 
             // Register listener
             AndroidNotificationCenter.OnNotificationReceived += OnNotificationReceived;
@@ -41,7 +40,31 @@ namespace LocalCalendar.App
             HandleNotificationIntent();
         }
 
-        void HandleNotificationIntent()
+        private void RescheduleNotifications()
+        {
+            var repo = new CalendarRepository();
+            var all = repo.GetAllCalendarItems();
+
+            foreach (var item in all)
+            {
+                switch (NotificationScheduler.GetReminderTiming(item))
+                {
+                    case ReminderTiming.Future:
+                        NotificationScheduler.Schedule(item);
+                        break;
+
+                    case ReminderTiming.Late:
+                        NotificationScheduler.FireImmediate(item);
+                        break;
+
+                    default:
+                        // Ignore
+                        break;
+                }
+            }
+        }
+
+        private void HandleNotificationIntent()
         {            
             var intent = AndroidNotificationCenter.GetLastNotificationIntent();
             // If Android gave us an intent
@@ -58,22 +81,6 @@ namespace LocalCalendar.App
             }
         }
 
-        private void RescheduleNotifications()
-        {
-            var repo = new CalendarRepository();
-            var all = repo.GetAllCalendarItems();
-            var nowUtc = DateTime.UtcNow;
-
-            foreach (var item in all)
-            {
-                if(NotificationScheduler.isCurrentReminder(item))
-                {
-                    NotificationScheduler.Cancel(item);
-                    NotificationScheduler.Schedule(item);
-                }
-            }
-        }
-
         private void OnNotificationReceived(AndroidNotificationIntentData data)
         {
             NotificationLogger.Log(new NotificationLogEntry
@@ -84,7 +91,7 @@ namespace LocalCalendar.App
             });
         }
 
-        void OnApplicationPause(bool paused)
+        private void OnApplicationPause(bool paused)
         {
             LoggingService.Info(LogCategory.App,
                                 paused ? "App paused" : "App resumed");
@@ -92,38 +99,7 @@ namespace LocalCalendar.App
 
         private void OnDestroy()
         {
-            // Defensive cleanup (good practice)
             AndroidNotificationCenter.OnNotificationReceived -= OnNotificationReceived;
         }
-
-
-        /*
-        void Start()
-        {
-            // Notifications
-            var repo = new CalendarRepository();
-            var all = repo.GetAllCalendarItems();
-
-            foreach (var item in all)
-            {
-                NotificationScheduler.Cancel(item);
-                NotificationScheduler.Schedule(item);
-            }
-
-            NotificationCatchUpService.Run();
-            NotificationRescheduler.RescheduleAll();
-
-            AndroidNotificationCenter.OnNotificationReceived += data =>
-            {
-                NotificationLogger.Log(new NotificationLogEntry
-                {
-                    Title = data.Notification.Title,
-                    FiredLocal = DateTime.Now,
-                    Note = "Delivered"
-                });
-            };
-        }
-        */
-        
     }
 }
