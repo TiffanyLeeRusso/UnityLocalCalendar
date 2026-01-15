@@ -42,8 +42,6 @@ namespace LocalCalendar.Notifications
             if (item.Type != CalendarItemType.Reminder || item.Reminder == null)
                 return;
 
-            Cancel(item);
-
             if (item.RepeatRule == null)
             {
                 ScheduleSingleNotification(item, item.StartUtc);
@@ -71,6 +69,8 @@ namespace LocalCalendar.Notifications
 
         private static void ScheduleSingleNotification(CalendarItem item, DateTime startUtc)
         {
+            Cancel(item);
+
             // Exact time commented out. Since Android does not guarantee exact delivery time
             // for local notifcations we schedule notifications slightly beforehand.
             /*DateTime nextUtc = RecurrenceExpander
@@ -95,6 +95,7 @@ namespace LocalCalendar.Notifications
                     ? "Reminder"
                     : item.Note,
                 FireTime = fireTimeLocal,
+                ShouldAutoCancel = true,
                 IntentData = $"open:item:{item.Id}",
                 SmallIcon = "icon_small",
                 LargeIcon = "icon_large"

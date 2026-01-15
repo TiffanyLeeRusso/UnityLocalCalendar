@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEngine;
+using LocalCalendar.AppDebug;
 
 namespace LocalCalendar.Services
 {
@@ -116,19 +117,19 @@ namespace LocalCalendar.Services
             return sb.ToString();
         }
 
-        public static string DumpFileToString()
+        public static string DumpFileToString(string path, string logName)
         {
             try
             {
-                if (!File.Exists(LogFilePath))
-                    return "=== App Log ===\n(no log file found)";
+                if (!File.Exists(path))
+                    return $"=== {logName} ===\n(no log file found)";
 
                 var sb = new StringBuilder();
-                sb.AppendLine("=== App Log (from file) ===");
-                sb.AppendLine($"Path: {LogFilePath}");
+                sb.AppendLine($"=== {logName} (from file) ===");
+                sb.AppendLine($"Path: {path}");
                 sb.AppendLine();
 
-                sb.Append(File.ReadAllText(LogFilePath));
+                sb.Append(File.ReadAllText(path));
                 return sb.ToString();
             }
             catch (Exception ex)
@@ -140,14 +141,16 @@ namespace LocalCalendar.Services
         public static string DumpAllToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine(DumpFileToString());
+            sb.AppendLine(GlobalExceptionHandler.DumpFileToString());
+            sb.AppendLine();
+            sb.AppendLine(DumpFileToString(LogFilePath, "App Log"));
             sb.AppendLine();
             sb.AppendLine("=== Current Session ===");
             sb.AppendLine(DumpSessionToString());
             return sb.ToString();
         }
 
-        public static void Clear()
+        public static void ClearDebug()
         {
             _entries.Clear();
 
@@ -155,8 +158,15 @@ namespace LocalCalendar.Services
             {
                 if (File.Exists(LogFilePath))
                     File.Delete(LogFilePath);
+
+                GlobalExceptionHandler.Clear();
             }
             catch { }
+        }
+
+        public static void ClearCrashData()
+        {
+            GlobalExceptionHandler.Clear();
         }
     }
 }

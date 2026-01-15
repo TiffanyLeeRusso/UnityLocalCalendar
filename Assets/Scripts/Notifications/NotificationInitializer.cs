@@ -11,6 +11,16 @@ namespace LocalCalendar.Notifications
 
         public static void Initialize()
         {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            if (!HasPromptedForExactAlarm())
+            {
+                PlayerPrefs.SetInt("ExactAlarmPrompted", 1);
+                // Request exact-alarm permission
+                ExactAlarmRequest.OpenExactAlarmSettings();
+                //UIEvents.ShowExactAlarmExplanation();
+            }
+#endif
+
             // Open a notification channel with Android
             var channel = new AndroidNotificationChannel
             {
@@ -29,6 +39,11 @@ namespace LocalCalendar.Notifications
                 UnityEngine.Android.Permission.RequestUserPermission(
                     "android.permission.POST_NOTIFICATIONS");
             }
+        }
+
+        private static bool HasPromptedForExactAlarm()
+        {
+            return PlayerPrefs.GetInt("ExactAlarmPrompted", 0) == 1;
         }
     }
 }

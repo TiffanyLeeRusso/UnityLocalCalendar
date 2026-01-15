@@ -25,8 +25,8 @@ namespace LocalCalendar.Settings
         [SerializeField] private GameObject debugPopup;
         [SerializeField] private RectTransform debugScrollViewRect;
         [SerializeField] private TextMeshProUGUI debugText;
-        //[SerializeField] private TMP_InputField debugText;
-        [SerializeField] private GameObject debugClearBtn;
+        [SerializeField] private GameObject debugDiagnosticsClearBtn;
+        [SerializeField] private GameObject debugCrashClearBtn;
         [SerializeField] private Button debugRefreshBtn;
 
         void Start()
@@ -69,7 +69,7 @@ namespace LocalCalendar.Settings
             if (on) SettingsService.SetTextMode("big");
             else SettingsService.SetTextMode("normal");
         }
-
+        
         // ---------- DEBUG ----------
 
         public void SendTestNotification()
@@ -125,7 +125,8 @@ namespace LocalCalendar.Settings
         {
             DumpDatabase();
 
-            debugClearBtn.SetActive(false);
+            debugDiagnosticsClearBtn.SetActive(false);
+            debugCrashClearBtn.SetActive(false);
             debugRefreshBtn.onClick.RemoveAllListeners();
             debugRefreshBtn.onClick.AddListener(DumpDatabase);
             debugPopup.SetActive(true);
@@ -140,7 +141,13 @@ namespace LocalCalendar.Settings
 
         public void ClearDiagnostics()
         {
-            LoggingService.Clear();
+            LoggingService.ClearDebug();
+            DumpDiagnostics();
+        }
+
+        public void ClearCrash()
+        {
+            LoggingService.ClearCrashData();
             DumpDiagnostics();
         }
 
@@ -148,7 +155,9 @@ namespace LocalCalendar.Settings
         {
             DumpDiagnostics();
 
-            debugClearBtn.SetActive(true);
+            debugDiagnosticsClearBtn.SetActive(true);
+            debugCrashClearBtn.SetActive(true);
+
             debugRefreshBtn.onClick.RemoveAllListeners();
             debugRefreshBtn.onClick.AddListener(DumpDiagnostics);
             debugPopup.SetActive(true);
