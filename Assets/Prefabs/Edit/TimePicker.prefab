@@ -153,6 +153,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1077294631630346289}
     m_Modifications:
+    - target: {fileID: 1584478235218935235, guid: ac82759b450813948be461878603c361, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 500
+      objectReference: {fileID: 0}
     - target: {fileID: 6462678692284607684, guid: ac82759b450813948be461878603c361, type: 3}
       propertyPath: m_Name
       value: HourDropdown
@@ -419,6 +423,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1077294631630346289}
     m_Modifications:
+    - target: {fileID: 1584478235218935235, guid: ac82759b450813948be461878603c361, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 500
+      objectReference: {fileID: 0}
     - target: {fileID: 6462678692284607684, guid: ac82759b450813948be461878603c361, type: 3}
       propertyPath: m_Name
       value: MinuteDropdown

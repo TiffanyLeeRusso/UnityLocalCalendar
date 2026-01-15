@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 6349656325649529283}
   - component: {fileID: 5686199391473174496}
   - component: {fileID: 7992145212786788677}
+  - component: {fileID: 9194420833655322224}
   m_Layer: 0
   m_Name: RepeatIcon
   m_TagString: Untagged
@@ -59,7 +60,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -75,6 +76,26 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &9194420833655322224
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2379301066901212755}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
+  m_IgnoreLayout: 0
+  m_MinWidth: -1
+  m_MinHeight: -1
+  m_PreferredWidth: 100
+  m_PreferredHeight: 100
+  m_FlexibleWidth: -1
+  m_FlexibleHeight: -1
+  m_LayoutPriority: 1
 --- !u!1 &2811275105044086330
 GameObject:
   m_ObjectHideFlags: 0
@@ -129,11 +150,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
   m_IgnoreLayout: 0
   m_MinWidth: -1
-  m_MinHeight: -1
+  m_MinHeight: 24
   m_PreferredWidth: -1
-  m_PreferredHeight: -1
+  m_PreferredHeight: 200
   m_FlexibleWidth: -1
-  m_FlexibleHeight: -1
+  m_FlexibleHeight: 0
   m_LayoutPriority: 1
 --- !u!114 &3818637018337634926
 MonoBehaviour:
@@ -163,6 +184,7 @@ GameObject:
   - component: {fileID: 1528415879076836790}
   - component: {fileID: 4792720048746298148}
   - component: {fileID: 7514330244878681713}
+  - component: {fileID: 8313259812345264983}
   m_Layer: 0
   m_Name: ReminderIcon
   m_TagString: Untagged
@@ -211,7 +233,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -227,6 +249,26 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &8313259812345264983
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4590044269649564725}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
+  m_IgnoreLayout: 0
+  m_MinWidth: -1
+  m_MinHeight: -1
+  m_PreferredWidth: 100
+  m_PreferredHeight: 100
+  m_FlexibleWidth: -1
+  m_FlexibleHeight: -1
+  m_LayoutPriority: 1
 --- !u!1 &6713639734397981818
 GameObject:
   m_ObjectHideFlags: 0
@@ -284,9 +326,9 @@ MonoBehaviour:
     m_Right: 0
     m_Top: 0
     m_Bottom: 0
-  m_ChildAlignment: 3
-  m_Spacing: 0
-  m_ChildForceExpandWidth: 1
+  m_ChildAlignment: 0
+  m_Spacing: 2
+  m_ChildForceExpandWidth: 0
   m_ChildForceExpandHeight: 0
   m_ChildControlWidth: 0
   m_ChildControlHeight: 0
@@ -482,7 +524,7 @@ MonoBehaviour:
     m_Top: 0
     m_Bottom: 0
   m_ChildAlignment: 3
-  m_Spacing: 0
+  m_Spacing: 2
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 0
   m_ChildControlWidth: 1
@@ -594,6 +636,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 8705582688888091390}
     m_Modifications:
     - target: {fileID: -3781769698805350983, guid: aeb3380754616b245a2bdb91c1485ab9, type: 3}
+      propertyPath: m_RichText
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -3781769698805350983, guid: aeb3380754616b245a2bdb91c1485ab9, type: 3}
       propertyPath: m_GlobalPointSize
       value: 50
       objectReference: {fileID: 0}
@@ -603,11 +649,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1910688373708104609, guid: aeb3380754616b245a2bdb91c1485ab9, type: 3}
       propertyPath: m_fontSize
-      value: 50
+      value: 72
+      objectReference: {fileID: 0}
+    - target: {fileID: 1910688373708104609, guid: aeb3380754616b245a2bdb91c1485ab9, type: 3}
+      propertyPath: m_isRichText
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1910688373708104609, guid: aeb3380754616b245a2bdb91c1485ab9, type: 3}
+      propertyPath: m_fontSizeMin
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 1910688373708104609, guid: aeb3380754616b245a2bdb91c1485ab9, type: 3}
       propertyPath: m_fontSizeBase
       value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 1910688373708104609, guid: aeb3380754616b245a2bdb91c1485ab9, type: 3}
+      propertyPath: m_overflowMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1910688373708104609, guid: aeb3380754616b245a2bdb91c1485ab9, type: 3}
+      propertyPath: m_TextWrappingMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1910688373708104609, guid: aeb3380754616b245a2bdb91c1485ab9, type: 3}
+      propertyPath: m_enableAutoSizing
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6674439586503565910, guid: aeb3380754616b245a2bdb91c1485ab9, type: 3}
       propertyPath: m_Pivot.x
@@ -861,11 +927,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1910688373708104609, guid: aeb3380754616b245a2bdb91c1485ab9, type: 3}
       propertyPath: m_fontSize
-      value: 50
+      value: 72
+      objectReference: {fileID: 0}
+    - target: {fileID: 1910688373708104609, guid: aeb3380754616b245a2bdb91c1485ab9, type: 3}
+      propertyPath: m_fontSizeMin
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 1910688373708104609, guid: aeb3380754616b245a2bdb91c1485ab9, type: 3}
       propertyPath: m_fontSizeBase
       value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 1910688373708104609, guid: aeb3380754616b245a2bdb91c1485ab9, type: 3}
+      propertyPath: m_overflowMode
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1910688373708104609, guid: aeb3380754616b245a2bdb91c1485ab9, type: 3}
+      propertyPath: m_TextWrappingMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1910688373708104609, guid: aeb3380754616b245a2bdb91c1485ab9, type: 3}
+      propertyPath: m_enableAutoSizing
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6674439586503565910, guid: aeb3380754616b245a2bdb91c1485ab9, type: 3}
       propertyPath: m_Pivot.x
