@@ -15,9 +15,11 @@ namespace LocalCalendar.EditItem
     {
         public TMP_InputField titleInput;
         public TMP_InputField noteInput;
-        public TMP_InputField dateInput;
-        public TMP_InputField endDateInput;
 
+        [SerializeField] private DatePicker startDatePicker;
+        [SerializeField] private DatePicker endDatePicker;
+        [SerializeField] private TMP_Text startDateLabel;
+        [SerializeField] private TMP_Text endDateLabel;
         [SerializeField] private GameObject timePickerContainer;
         [SerializeField] private TimePicker startTimePicker;
         [SerializeField] private TimePicker endTimePicker;
@@ -38,14 +40,18 @@ namespace LocalCalendar.EditItem
         private CalendarItem _item;
         private bool _suppressTimeEvents;
         private TimeSpan _lastDuration = TimeSpan.FromHours(1);
-        private DateTime _currentDate; // the date being edited
+        private DateTime _startDate;
+        private DateTime _endDate;
 
         void Start()
         {
             _repo = new CalendarRepository();
 
+            // Change events
             startTimePicker.OnTimeChanged += OnStartTimeChanged;
             endTimePicker.OnTimeChanged += OnEndTimeChanged;
+            startDatePicker.OnDateChanged += OnStartDateChanged;
+            endDatePicker.OnDateChanged += OnEndDateChanged;
             allDayToggle.onValueChanged.AddListener(OnAllDayChanged);
             allDayToggle.onValueChanged.AddListener(_ => RefreshVisibility());
             reminderToggle.onValueChanged.AddListener(_ => RefreshVisibility());
@@ -73,6 +79,36 @@ namespace LocalCalendar.EditItem
             repeatContainer.SetActive(repetitive);
         }
 
+        private void RefreshDateLabels()
+        {
+            startDateLabel.text = _startDate.ToString("yyyy-MM-dd");
+            endDateLabel.text = _endDate.ToString("yyyy-MM-dd");
+        }
+
+        private void OnStartDateChanged(DateTime newStartDate)
+        {
+            _startDate = newStartDate.Date;
+
+            // If start moved after end, push end forward
+            if (_endDate < _startDate)
+              _endDate = _startDate;
+
+            endDatePicker.SetDate(_endDate);
+            RefreshDateLabels();
+        }
+
+        private void OnEndDateChanged(DateTime newEndDate)
+        {
+            _endDate = newEndDate.Date;
+
+            // End cannot be before start
+            if (_endDate < _startDate)
+              _endDate = _startDate;
+
+            endDatePicker.SetDate(_endDate);
+            RefreshDateLabels();
+        }
+
         private void OnStartTimeChanged(DateTime newStart)
         {
             if (_suppressTimeEvents) return;
@@ -80,14 +116,14 @@ namespace LocalCalendar.EditItem
             _suppressTimeEvents = true;
 
             var newEnd = newStart + _lastDuration;
-
-            // clamp to same day
-            var endOfDay = newStart.Date.AddDays(1).AddMinutes(-1);
-            //if (newEnd > endOfDay)
-            if (newEnd.Date > newStart.Date)
-              newEnd = endOfDay;
+            if (newEnd.Date > _endDate)
+            {
+                _endDate = newEnd.Date;
+                endDatePicker.SetDate(_endDate);
+            }
 
             endTimePicker.SetTime(newEnd);
+            RefreshDateLabels();
 
             _suppressTimeEvents = false;
         }
@@ -111,12 +147,12 @@ namespace LocalCalendar.EditItem
 
         private DateTime GetStartDateTime()
         {
-            return _currentDate + startTimePicker.GetTime();
+            return _startDate + startTimePicker.GetTime();
         }
 
         private DateTime GetEndDateTime()
         {
-            return _currentDate + endTimePicker.GetTime();
+            return _endDate + endTimePicker.GetTime();
         }
 
         private void OnAllDayChanged(bool isAllDay)
@@ -162,9 +198,12 @@ namespace LocalCalendar.EditItem
             {
                 // Load item
                 _item = _repo.GetById(EditItemContext.EditingItemId);
-                _currentDate = _item.StartUtc.ToLocalTime().Date;
-                _lastDuration = _item.EndUtc.ToLocalTime() -
-                    _item.StartUtc.ToLocalTime();
+                var startLocal = _item.StartUtc.ToLocalTime();
+                var endLocal = _item.EndUtc.ToLocalTime();
+
+                _startDate = startLocal.Date;
+                _endDate = endLocal.Date;
+                _lastDuration = endLocal - startLocal;
 
                 BuildUIFromItem();
             }
@@ -172,6 +211,8 @@ namespace LocalCalendar.EditItem
             {
                 // New item
                 DateTime baseDate = EditItemContext.SelectedDate ?? DateTime.Today;
+                _startDate = baseDate;
+                _endDate = baseDate;
                 _item = new CalendarItem
                 {
                     Id = Guid.NewGuid().ToString(),
@@ -182,6 +223,44 @@ namespace LocalCalendar.EditItem
                 BuildUIFromItem();
             }
         }
+
+        public void OnNowPressed()
+        {
+            _suppressTimeEvents = true;
+
+            // Ensure time-based mode
+            allDayToggle.isOn = false;
+
+            DateTime now = DateTime.Now;
+
+            // Round UP to next whole hour
+            DateTime start = new DateTime(
+                now.Year,
+                now.Month,
+                now.Day,
+                now.Hour,
+                0,
+                0
+            ).AddHours(1);
+
+            DateTime end = start + _lastDuration;
+
+            // Update dates
+            _startDate = start.Date;
+            _endDate = end.Date;
+
+            startDatePicker.SetDate(_startDate);
+            endDatePicker.SetDate(_endDate);
+
+            // Update times
+            startTimePicker.SetTime(start);
+            endTimePicker.SetTime(end);
+
+            RefreshDateLabels();
+
+            _suppressTimeEvents = false;
+        }
+
 
         public void OnSavePressed()
         {
@@ -231,8 +310,9 @@ namespace LocalCalendar.EditItem
             // Date
             var startLocal = _item.StartUtc.ToLocalTime();
             var endLocal = _item.EndUtc.ToLocalTime();
-            dateInput.text = startLocal.ToString("yyyy-MM-dd");
-            endDateInput.text = endLocal.ToString("yyyy-MM-dd");
+            startDatePicker.SetDate(_startDate);
+            endDatePicker.SetDate(_endDate);
+            RefreshDateLabels();
             _lastDuration = endLocal - startLocal;
 
             // All Day
@@ -264,39 +344,24 @@ namespace LocalCalendar.EditItem
             {
                 repeatToggle.isOn = false;
             }
-
-            // TODO: the rest
-            /*    public class CalendarItem
-                  {
-
-                  //public DateTime StartUtc;
-                  public DateTime EndUtc;
-
-                  public ReminderSettings Reminder;
-                  }
-            */
-
         }
 
         CalendarItem BuildItemFromUI()
         {
-            DateTime startDate = DateTime.Parse(dateInput.text);
-            DateTime endDate = DateTime.Parse(endDateInput.text);
-
             DateTime startLocal;
             DateTime endLocal;
 
             if (allDayToggle.isOn)
             {
-                startLocal = startDate.Date;
-                endLocal = endDate.Date.AddDays(1);
+                startLocal = _startDate;
+                endLocal = _endDate.AddDays(1);
             }
             else
             {
-                startLocal = startDate.Date + startTimePicker.GetTime();
-                endLocal = endDate.Date + endTimePicker.GetTime();
+                startLocal = _startDate + startTimePicker.GetTime();
+                endLocal = _endDate + endTimePicker.GetTime();
 
-                // Safety: prevent inverted times
+                // Prevent inverted times
                 if (endLocal <= startLocal)
                     endLocal = startLocal.AddMinutes(5);
             }
@@ -356,6 +421,5 @@ namespace LocalCalendar.EditItem
                 UntilUtc = until
             };
         }
-
     }
 }

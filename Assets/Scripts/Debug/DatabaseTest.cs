@@ -3,31 +3,34 @@ using UnityEngine;
 using LocalCalendar.Data;
 using LocalCalendar.Models;
 
-public class DatabaseTest : MonoBehaviour
+namespace LocalCalendar.AppDebug
 {
-    void Start()
+    public class DatabaseTest : MonoBehaviour
     {
-        Debug.Log("DB TEST: starting");
-
-        var repo = new CalendarRepository();
-
-        var testItem = new CalendarItem
+        void Start()
         {
-            Id = Guid.NewGuid().ToString(),
-            Type = CalendarItemType.Event,
-            Title = "SQLite Test Event",
-            Note = "If you see this again, DB works",
-            StartUtc = DateTime.UtcNow,
-            EndUtc = DateTime.UtcNow.AddHours(1),
-            AllDay = false
-        };
+            Debug.Log("DB TEST: starting");
 
-        repo.Save(testItem);
+            var repo = new CalendarRepository();
 
-        Debug.Log("DB TEST: saved item " + testItem.Id);
-        var all = repo.GetAll();
-        Debug.Log("DB TEST: item count = " + all.Count);
-        Debug.Log(Application.persistentDataPath);
+            var testItem = new CalendarItem
+            {
+                Id = Guid.NewGuid().ToString(),
+                Type = CalendarItemType.Event,
+                Title = "SQLite Test Event",
+                Note = "If you see this again, DB works",
+                StartUtc = DateTime.UtcNow,
+                EndUtc = DateTime.UtcNow.AddHours(1),
+                AllDay = false
+            };
 
+            repo.Save(testItem);
+
+            Debug.Log("DB TEST: saved item " + testItem.Id);
+            var all = repo.GetAllCalendarItems();
+            Debug.Log("DB TEST: item count = " + all.Count);
+            Debug.Log(Application.persistentDataPath);
+
+        }
     }
 }
