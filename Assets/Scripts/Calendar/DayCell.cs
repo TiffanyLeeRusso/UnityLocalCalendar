@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using LocalCalendar.Data;
 
 namespace LocalCalendar.Calendar
 {
@@ -9,35 +11,51 @@ namespace LocalCalendar.Calendar
     {
         [SerializeField] private TextMeshProUGUI dayNumber;
         [SerializeField] private Image background;
-        [SerializeField] private GameObject marker; // TODO: actual preview of items instead of just marking that some exist
-        [SerializeField] private GameObject repeatIcon;
+        [SerializeField] private Transform eventsContainer;
+        [SerializeField] private DayEventRow dayEventRowPrefab;
 
         private DateTime _date;
-        private Action<DateTime> _onClick;
+        private Action<DateTime> _onDayClicked;
+        private Action<CalendarItem> _onItemClicked;
 
         public void Initialize(
             DateTime date,
             bool isToday,
-            bool hasItems,
-            Action<DateTime> onClick)
+            bool isCurrentMonth,
+            List<CalendarItem> items,
+            Action<DateTime> onDayClicked,
+            Action<CalendarItem> onItemClicked)
         {
             _date = date;
-            _onClick = onClick;
+            _onDayClicked = onDayClicked;
+            _onItemClicked = onItemClicked;
 
-            dayNumber.gameObject.SetActive(true);
             dayNumber.text = date.Day.ToString();
-            marker.SetActive(hasItems);
-            //repeatIcon.SetActive(_item.RepeatRule != null);
+            dayNumber.color = isCurrentMonth ? Color.white : Color.gray;
 
             background.color = isToday
                 ? new Color(0.5f, 0.3f, 0.9f)
                 : Color.clear;
+
+            BuildRows(items);
         }
 
-        public void OnClick()
+        private void BuildRows(List<CalendarItem> items)
         {
-            _onClick?.Invoke(_date);
+            foreach (Transform child in eventsContainer)
+                Destroy(child.gameObject);
+
+            foreach (var item in items)
+            {
+                var row = Instantiate(dayEventRowPrefab, eventsContainer);
+                row.Initialize(item, _date, _onItemClicked);
+            }
+        }
+
+        // Called by Button / EventTrigger on the cell background
+        public void OnDayClicked()
+        {
+            _onDayClicked?.Invoke(_date);
         }
     }
 }
-

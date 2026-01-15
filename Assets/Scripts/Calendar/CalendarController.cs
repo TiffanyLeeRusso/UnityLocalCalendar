@@ -2,28 +2,32 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using LocalCalendar.Data;
 using LocalCalendar.App;
 using LocalCalendar.Services;
+using LocalCalendar.EditItem;
+using LocalCalendar.Schedule;
 
 namespace LocalCalendar.Calendar
 {
     public class CalendarController : MonoBehaviour
     {
-        [Header("UI")]
-        [SerializeField] private TMP_InputField monthLabel;
-        [SerializeField] private Transform monthGrid;
+        [SerializeField] private TMP_Text monthLabel;
+        [SerializeField] private RectTransform monthGrid;
         [SerializeField] private DayCell dayCellPrefab;
         [SerializeField] private DayEventsPopup dayEventsPopup;
 
         private DateTime _currentMonth;
         private CalendarRepository _repo;
+        private GridLayoutGroup monthGridLayout;
 
         void Awake()
         {
             _repo = new CalendarRepository();
             _currentMonth = DateTime.Today;
+            monthGridLayout = monthGrid.GetComponent<GridLayoutGroup>();
         }
 
         void OnEnable()
@@ -63,86 +67,33 @@ namespace LocalCalendar.Calendar
 
             monthLabel.text = _currentMonth.ToString("MMMM yyyy");
 
-            DateTime firstDay = new DateTime(
-                _currentMonth.Year,
-                _currentMonth.Month,
-                1);
+            DateTime firstDay = new DateTime(_currentMonth.Year,
+                                             _currentMonth.Month,
+                                             1);
 
             int startOffset = (int)firstDay.DayOfWeek;
             DateTime gridStart = firstDay.AddDays(-startOffset);
 
-            var itemsByDay = LoadItemsForMonth();
-
             for (int i = 0; i < 42; i++)
             {
                 DateTime date = gridStart.AddDays(i);
+                bool isCurrentMonth = date.Month == _currentMonth.Month;
 
                 bool isToday = date.Date == DateTime.Today;
-                bool hasItems = itemsByDay.Contains(date.Date);
-
+                var dayItems = CalendarUtils.GetExpandedDayItems(_repo, date);
                 var cell = Instantiate(dayCellPrefab, monthGrid);
-                Debug.Log(date.Day.ToString());
-                Debug.Log(hasItems);
                 cell.Initialize(
                     date,
                     isToday,
-                    hasItems,
-                    OnDayClicked);
+                    isCurrentMonth,
+                    dayItems,
+                    OnDayClicked,
+                    OnItemClicked);
             }
+
+            Canvas.ForceUpdateCanvases();
+            monthGridLayout.cellSize = CalendarUtils.ResizeGrid(monthGridLayout, monthGrid);
         }
-
-        private HashSet<DateTime> LoadItemsForMonth()
-        {
-            var result = new HashSet<DateTime>();
-
-            DateTime monthStart = new DateTime(
-                _currentMonth.Year,
-                _currentMonth.Month,
-                1);
-
-            DateTime monthEnd = monthStart.AddMonths(1).AddDays(-1);
-
-            var all = _repo.GetAllCalendarItems();
-            foreach (var item in all)
-            {
-                foreach (var occurrence in RecurrenceExpander.ExpandOccurrences(
-                             item, monthStart, monthEnd))
-                {
-                    DateTime occStart = occurrence;
-                    DateTime occEnd = GetOccurrenceEnd(item, occStart);
-
-                    for (DateTime d = occStart.Date; d < occEnd.Date; d = d.AddDays(1))
-                        result.Add(d);
-                }
-            }
-            /*
-            foreach (var item in all)
-            {
-                foreach (var occurrence in
-                 RecurrenceExpander.ExpandOccurrences(
-                     item,
-                     monthStart,
-                     monthEnd))
-                {
-                    result.Add(occurrence.Date);
-                }
-                //result.Add(item.StartUtc.ToLocalTime().Date);
-            }
-            */
-            MyDebug.DumpObj(result);
-            return result;
-        }
-
-        private DateTime GetOccurrenceEnd(CalendarItem item, DateTime occurrenceStart)
-        {
-            if (item.EndUtc == item.StartUtc)
-                return occurrenceStart.AddMinutes(1);
-
-            TimeSpan duration = item.EndUtc - item.StartUtc;
-
-            return occurrenceStart.Add(duration);
-        }
-
 
         private void ClearGrid()
         {
@@ -152,40 +103,21 @@ namespace LocalCalendar.Calendar
 
         public void OnDayClicked(DateTime date)
         {
-            var items = _repo.GetAllCalendarItems();
-
-            var dayItems = new List<CalendarItem>();
-
-            foreach (var item in items)
-            {
-                if (item.RepeatRule == null)
-                {
-                    if (item.StartUtc.ToLocalTime().Date == date.Date)
-                        dayItems.Add(item);
-                }
-                else
-                {
-                    foreach (var occ in RecurrenceExpander
-                             .ExpandOccurrences(item, date, date))
-                    {
-                        dayItems.Add(item);
-                    }
-                }
-            }
-
-            dayEventsPopup.Show(date, dayItems);
+            dayEventsPopup.Show(date);
         }
 
-        /*
-        public void OnDayClicked(DateTime date)
+        private void OnItemClicked(CalendarItem item)
         {
-            Debug.Log("Clicked day: " + date.ToShortDateString());
-            var items = _repo.GetItemsForDay(date);
-            dayEventsPopup.Show(date, items);
-            }*/
+            OnDayClicked(item.StartUtc);
+            //EditItemContext.EditingItemId = item.Id;
+            //SceneManager.LoadScene("EditItemScene");
+        }
 
         public void OpenSchedule()
         {
+            // Pass the currently displayed calendar month
+            ScheduleContext.InitialMonth =
+                new DateTime(_currentMonth.Year, _currentMonth.Month, 1);
             SceneManager.LoadScene("ScheduleScene");
         }
 

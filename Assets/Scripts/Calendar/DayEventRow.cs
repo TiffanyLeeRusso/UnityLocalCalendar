@@ -43,12 +43,10 @@ namespace LocalCalendar.Calendar
                 timeText = "All day";
 
             timeLabel.text = timeText;
-            //timeLabel.text = item.AllDay ? "All day" : item.StartUtc.ToLocalTime().ToString("HH:mm") + (isPm ? "PM" : "AM");
 
             // Title
             titleLabel.text = item.Title;
-            
-            Debug.Log((int)_item.Type);
+
             // Reminder
             reminderIcon.SetActive(_item.Type == CalendarItemType.Reminder);
 
@@ -62,7 +60,6 @@ namespace LocalCalendar.Calendar
 
         public void OnClick()
         {
-            Debug.Log("Clicked item: " + _item.Title);
             // open EditItemScene
             _onClick?.Invoke(_item);
         }
