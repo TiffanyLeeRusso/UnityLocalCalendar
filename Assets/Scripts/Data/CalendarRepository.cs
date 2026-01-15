@@ -3,11 +3,14 @@ using LocalCalendar.Models;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
+using LocalCalendar.Services;
 
 namespace LocalCalendar.Data
 {
     public class CalendarRepository
     {
+        // --- DB Modifiers ---
+
         public void Save(CalendarItem item)
         {
             var db = Database.Connection;
@@ -61,64 +64,227 @@ namespace LocalCalendar.Data
             });
         }
 
+        // --- DB Gets ---
+
+        private void LoadMaps(
+            out Dictionary<string, ReminderRow> reminderMap,
+            out Dictionary<string, RepeatRuleRow> repeatMap)
+        {
+            var db = Database.Connection;
+
+            reminderMap = db.Table<ReminderRow>()
+                .ToDictionary(r => r.ItemId);
+
+            repeatMap = db.Table<RepeatRuleRow>()
+                .ToDictionary(r => r.ItemId);
+        }
+
+        private CalendarItem BuildItem(
+            CalendarItemRow row,
+            ReminderRow reminderRow,
+            RepeatRuleRow repeatRow)
+        {
+            ReminderSettings reminder = null;
+            if (reminderRow != null)
+            {
+                reminder = new ReminderSettings
+                {
+                    Offset = TimeSpan.FromSeconds(reminderRow.OffsetSeconds)
+                };
+            }
+
+            RepeatRule repeatRule = null;
+            if (repeatRow != null)
+            {
+                repeatRule = new RepeatRule
+                {
+                    Interval = repeatRow.Interval,
+                    Unit = (RepeatUnit)repeatRow.Unit,
+                    UntilUtc = repeatRow.UntilUtcTicks.HasValue
+                    ? new DateTime(
+                        repeatRow.UntilUtcTicks.Value,
+                        DateTimeKind.Utc)
+                        : (DateTime?)null
+                };
+            }
+
+            return new CalendarItem
+            {
+                Id = row.Id,
+                Type = (CalendarItemType)row.Type,
+                Title = row.Title,
+                Note = row.Note,
+                StartUtc = new DateTime(row.StartUtcTicks, DateTimeKind.Utc),
+                EndUtc = new DateTime(row.EndUtcTicks, DateTimeKind.Utc),
+                AllDay = row.AllDay == 1,
+                Reminder = reminder,
+                RepeatRule = repeatRule
+            };
+        }
+
+        private List<CalendarItem> OrderItems(List<CalendarItem>items)
+        {
+            return items
+                .OrderBy(i => i.AllDay ? DateTime.MinValue : i.StartUtc)
+                .ToList();
+        }
+
         public List<CalendarItem> GetAllCalendarItems()
         {
             var db = Database.Connection;
 
             var itemRows = db.Table<CalendarItemRow>().ToList();
-            var reminderRows = db.Table<ReminderRow>().ToList();
-            var repeatRows = db.Table<RepeatRuleRow>().ToList();
-
-            var reminderMap = reminderRows.ToDictionary(r => r.ItemId);
-            var repeatMap = repeatRows.ToDictionary(r => r.ItemId);
+            LoadMaps(out var reminderMap, out var repeatMap);
 
             var result = new List<CalendarItem>();
-
             foreach (var row in itemRows)
             {
                 reminderMap.TryGetValue(row.Id, out var reminderRow);
                 repeatMap.TryGetValue(row.Id, out var repeatRow);
 
-                ReminderSettings reminder = null;
-                if (reminderRow != null)
-                {
-                    reminder = new ReminderSettings
-                    {
-                        Offset = TimeSpan.FromSeconds(reminderRow.OffsetSeconds)
-                    };
-                }
-
-                RepeatRule repeatRule = null;
-                if (repeatRow != null)
-                {
-                    repeatRule = new RepeatRule
-                    {
-                        Interval = repeatRow.Interval,
-                        Unit = (RepeatUnit)repeatRow.Unit,
-                        UntilUtc = repeatRow.UntilUtcTicks.HasValue
-                        ? new DateTime(
-                            repeatRow.UntilUtcTicks.Value,
-                            DateTimeKind.Utc)
-                            : (DateTime?)null
-                    };
-                }
-
-                result.Add(new CalendarItem
-                {
-                    Id = row.Id,
-                    Type = (CalendarItemType)row.Type,
-                    Title = row.Title,
-                    Note = row.Note,
-                    StartUtc = new DateTime(row.StartUtcTicks, DateTimeKind.Utc),
-                    EndUtc = new DateTime(row.EndUtcTicks, DateTimeKind.Utc),
-                    AllDay = row.AllDay == 1,
-                    Reminder = reminder,
-                    RepeatRule = repeatRule
-                });
+                result.Add(BuildItem(row, reminderRow, repeatRow));
             }
 
             return result;
         }
+
+        public List<CalendarItem> GetItemsForDay(DateTime localDate)
+        {
+            var db = Database.Connection;
+
+            DateTime dayStartUtc = localDate.Date.ToUniversalTime();
+            DateTime dayEndUtc = localDate.Date.AddDays(1).ToUniversalTime();
+
+            LoadMaps(out var reminderMap, out var repeatMap);
+
+            // Broad candidate fetch
+            var rows = db.Table<CalendarItemRow>()
+                .Where(r =>
+                       // Non-repeating overlap
+                       (r.StartUtcTicks < dayEndUtc.Ticks &&
+                        r.EndUtcTicks > dayStartUtc.Ticks)
+                       ||
+                       // Repeating items that started before this day ends
+                       r.StartUtcTicks < dayEndUtc.Ticks
+                )
+                .ToList();
+
+            var result = new List<CalendarItem>();
+
+            foreach (var row in rows)
+            {
+                repeatMap.TryGetValue(row.Id, out var repeatRow);
+
+                // Recurrence already ended before this day
+                if (repeatRow != null &&
+                    repeatRow.UntilUtcTicks.HasValue &&
+                    repeatRow.UntilUtcTicks.Value < dayStartUtc.Ticks)
+                {
+                    continue;
+                }
+
+                reminderMap.TryGetValue(row.Id, out var reminderRow);
+                result.Add(BuildItem(row, reminderRow, repeatRow));
+            }
+
+            return OrderItems(result);
+        }
+
+        public List<CalendarItem> GetItemsForMonth(DateTime monthLocal)
+        {
+            var db = Database.Connection;
+
+            DateTime monthStartLocal =
+                new DateTime(monthLocal.Year, monthLocal.Month, 1);
+
+            DateTime monthEndLocal =
+                monthStartLocal.AddMonths(1);
+
+            DateTime monthStartUtc = monthStartLocal.ToUniversalTime();
+            DateTime monthEndUtc = monthEndLocal.ToUniversalTime();
+
+            LoadMaps(out var reminderMap, out var repeatMap);
+
+            var candidateRows = db.Table<CalendarItemRow>()
+                .Where(r =>
+                       // Non-repeating overlap
+                       (r.StartUtcTicks < monthEndUtc.Ticks &&
+                        r.EndUtcTicks > monthStartUtc.Ticks)
+                       ||
+                       // Possibly repeating (start before end of month)
+                       r.StartUtcTicks < monthEndUtc.Ticks
+                )
+                .ToList();
+
+            var result = new List<CalendarItem>();
+            foreach (var row in candidateRows)
+            {
+                repeatMap.TryGetValue(row.Id, out var repeatRow);
+
+                // If repeating, check UntilUtc
+                if (repeatRow != null)
+                {
+                    if (repeatRow.UntilUtcTicks.HasValue &&
+                        repeatRow.UntilUtcTicks.Value < monthStartUtc.Ticks)
+                    {
+                        continue; // recurrence ended before this month
+                    }
+                }
+                else {} // Non-repeating item already filtered by overlap
+
+                reminderMap.TryGetValue(row.Id, out var reminderRow);
+                result.Add(BuildItem(row, reminderRow, repeatRow));
+            }
+
+            return OrderItems(result);
+        }
+
+
+        public CalendarItem GetById(string id)
+        {
+            // Calendar Item
+            var row = Database.Connection.Find<CalendarItemRow>(id);
+            if (row == null) return null;
+
+            var item = new CalendarItem
+            {
+                Id = row.Id,
+                Title = row.Title,
+                Note = row.Note,
+                Type = (CalendarItemType)row.Type,
+                StartUtc = new DateTime(row.StartUtcTicks, DateTimeKind.Utc),
+                EndUtc = new DateTime(row.EndUtcTicks, DateTimeKind.Utc),
+                AllDay = row.AllDay == 1
+            };
+            
+            // Reminder
+            var reminder = Database.Connection.Find<ReminderRow>(id);
+            if (reminder != null)
+            {
+                item.Reminder = new ReminderSettings
+                {
+                    Offset = TimeSpan.FromSeconds(reminder.OffsetSeconds)
+                };
+            }
+
+            // Repeat
+            var repeat = Database.Connection.Find<RepeatRuleRow>(id);
+            if (repeat != null)
+            {
+                item.RepeatRule = new RepeatRule
+                {
+                    Interval = repeat.Interval,
+                    Unit = (RepeatUnit)repeat.Unit,
+                    UntilUtc = repeat.UntilUtcTicks.HasValue
+                    ? new DateTime(repeat.UntilUtcTicks.Value, DateTimeKind.Utc)
+                    : null
+                };
+            }
+
+            return item;
+        }
+
+        // --- Debug ---
 
         public List<CalendarItemDebugDump> GetAll()
         {
@@ -209,85 +375,5 @@ namespace LocalCalendar.Data
 
             return sb.ToString();
         }
-
-        public List<CalendarItem> GetItemsForDay(DateTime localDate)
-        {
-            DateTime dayStartLocal = localDate.Date;
-            DateTime dayEndLocal = dayStartLocal.AddDays(1);
-
-            DateTime startUtc = dayStartLocal.ToUniversalTime();
-            DateTime endUtc = dayEndLocal.ToUniversalTime();
-
-            var rows = Database.Connection.Table<CalendarItemRow>()
-                .Where(r =>
-                       r.StartUtcTicks < endUtc.Ticks &&
-                       r.EndUtcTicks >= startUtc.Ticks)
-                .ToList();
-
-            var result = new List<CalendarItem>();
-
-            foreach (var row in rows)
-            {
-                result.Add(new CalendarItem
-                {
-                    Id = row.Id,
-                    Type = (CalendarItemType)row.Type,
-                    Title = row.Title,
-                    Note = row.Note,
-                    StartUtc = new DateTime(row.StartUtcTicks, DateTimeKind.Utc),
-                    EndUtc = new DateTime(row.EndUtcTicks, DateTimeKind.Utc),
-                    AllDay = row.AllDay == 1
-                });
-            }
-
-            return result
-                .OrderBy(i => i.AllDay ? DateTime.MinValue : i.StartUtc)
-                .ToList();
-        }
-
-        public CalendarItem GetById(string id)
-        {
-            // Calendar Item
-            var row = Database.Connection.Find<CalendarItemRow>(id);
-            if (row == null) return null;
-
-            var item = new CalendarItem
-            {
-                Id = row.Id,
-                Title = row.Title,
-                Note = row.Note,
-                Type = (CalendarItemType)row.Type,
-                StartUtc = new DateTime(row.StartUtcTicks, DateTimeKind.Utc),
-                EndUtc = new DateTime(row.EndUtcTicks, DateTimeKind.Utc),
-                AllDay = row.AllDay == 1
-            };
-            
-            // Reminder
-            var reminder = Database.Connection.Find<ReminderRow>(id);
-            if (reminder != null)
-            {
-                item.Reminder = new ReminderSettings
-                {
-                    Offset = TimeSpan.FromSeconds(reminder.OffsetSeconds)
-                };
-            }
-
-            // Repeat
-            var repeat = Database.Connection.Find<RepeatRuleRow>(id);
-            if (repeat != null)
-            {
-                item.RepeatRule = new RepeatRule
-                {
-                    Interval = repeat.Interval,
-                    Unit = (RepeatUnit)repeat.Unit,
-                    UntilUtc = repeat.UntilUtcTicks.HasValue
-                    ? new DateTime(repeat.UntilUtcTicks.Value, DateTimeKind.Utc)
-                    : null
-                };
-            }
-
-            return item;
-        }
-
     }
 }
