@@ -1,0 +1,40 @@
+using UnityEngine;
+
+namespace LocalCalendar.Permissions
+{
+    public class PermissionsRequestUI : MonoBehaviour
+    {
+        public static PermissionsRequestUI Instance;
+
+        void Awake()
+        {
+            Instance = this;
+            gameObject.SetActive(false);
+        }
+
+        void OnEnable()
+        {
+            var canvas = FindFirstObjectByType<Canvas>();
+            if (canvas != null)
+                transform.SetParent(canvas.transform, false);
+        }
+
+        public void Show()
+        {
+            gameObject.SetActive(true);
+            PlayerPrefs.SetInt("ExactAlarmPrompted", 1);
+            PlayerPrefs.Save();
+        }
+
+        public void Close()
+        {
+            gameObject.SetActive(false);
+        }
+
+        public void OnOpenSettingsPressed()
+        {
+            PermissionsUtils.OpenAppSettings();
+            gameObject.SetActive(false);
+        }
+    }
+}
