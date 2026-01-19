@@ -7,21 +7,17 @@ using System;
 using LocalCalendar.Services;
 using LocalCalendar.Data;
 using LocalCalendar.Notifications;
+using LocalCalendar.Permissions;
 
 namespace LocalCalendar.Settings
 {
     public class SettingsController : MonoBehaviour
     {
-        [Header("Storage")]
-        [SerializeField] private TMP_InputField dbPathText;
-
-        [Header("Theme")]
+        [SerializeField] private TMP_Text permissionsList;
         [SerializeField] private Toggle darkToggle;
-
-        [Header("BigTextMode")]
         [SerializeField] private Toggle bigTextToggle;
 
-        [Header("Debug")]
+        [SerializeField] private TMP_InputField dbPathText;
         [SerializeField] private GameObject debugPopup;
         [SerializeField] private RectTransform debugScrollViewRect;
         [SerializeField] private TextMeshProUGUI debugText;
@@ -32,13 +28,25 @@ namespace LocalCalendar.Settings
         void Start()
         {
             dbPathText.text = Application.persistentDataPath;
+
+            LoadPermissions();
             LoadTheme();
             LoadTextMode();
+        }
+
+        public void LoadPermissions()
+        {
+            permissionsList.text = PermissionsUtils.GetPermissionsListAsString();
         }
 
         public void OpenCalendar()
         {
             SceneManager.LoadScene("CalendarScene");
+        }
+
+        public void RegrantPermissions()
+        {
+            PopupService.ShowPermissionsPopup();
         }
 
         public void CopyDbPath()
