@@ -49,7 +49,7 @@ namespace LocalCalendar.EditItem
             var image = GetComponent<Image>();
             image.sprite = selected ? selectedSprite : defaultSprite;
             // Need to change the color to white so the sprite shows up properly.
-            image.color = selected ? Color.white : defaultColor;
+            image.color = selected ? new Color(1f, 1f, 1f, 0.4f) : defaultColor;
         }
     }
 }

@@ -1,13 +1,12 @@
 using System;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
-using UnityEngine.UI;
 using LocalCalendar.Data;
-using LocalCalendar.Models;
-using LocalCalendar.App;
 using LocalCalendar.Notifications;
 using LocalCalendar.Services;
+using LocalCalendar.Calendar;
 
 namespace LocalCalendar.EditItem
 {
