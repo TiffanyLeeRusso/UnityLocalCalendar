@@ -5,11 +5,8 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using LocalCalendar.Data;
-using LocalCalendar.Models;
-using LocalCalendar.App;
 using LocalCalendar.Calendar;
 using LocalCalendar.EditItem;
-using LocalCalendar.Services;
 
 namespace LocalCalendar.Schedule
 {
@@ -59,12 +56,13 @@ namespace LocalCalendar.Schedule
             {
                 var header = Instantiate(dayHeaderPrefab, content);
                 header.SetDate(groupItem.Key);
+                if(groupItem.Key == DateTime.Today)
+                    header.SetHighlight(true);
 
-                foreach (var entry in groupItem
-                         .OrderBy(e => e.item.StartUtc.ToLocalTime()))
+                foreach (var entry in groupItem.OrderBy(e => e.occurrenceStart))
                 {
                     var row = Instantiate(itemRowPrefab, content);
-                    row.Initialize(entry.item, groupItem.Key, OnItemClicked);
+                    row.Initialize(entry.item, entry.occurrenceStart, OnItemClicked);
                 }
             }
         }
