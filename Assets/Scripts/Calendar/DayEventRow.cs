@@ -1,13 +1,20 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using System;
 using LocalCalendar.Data;
-using LocalCalendar.Services;
 
 namespace LocalCalendar.Calendar
 {
     public class DayEventRow : MonoBehaviour
     {
+        public enum ViewMode
+        {
+            Full,
+            Compact
+        }
+
+        [SerializeField] private ViewMode mode;
         [SerializeField] private TMP_InputField timeLabel;
         [SerializeField] private TMP_InputField titleLabel;
         [SerializeField] private GameObject reminderIcon;
@@ -17,43 +24,44 @@ namespace LocalCalendar.Calendar
         private CalendarItem _item;
         private Action<CalendarItem> _onClick;
 
-        public void Initialize(CalendarItem item, DateTime occurrenceDay, Action<CalendarItem> onClick)
+        void Awake()
+        {
+            ApplyMode();
+        }
+
+        public void SetMode(ViewMode newMode)
+        {
+            mode = newMode;
+            ApplyMode();
+        }
+
+        public void Initialize(CalendarItem item, DateTime occurrenceStart, Action<CalendarItem> onClick)
         {
             _item = item;
             _onClick = onClick;
 
-            // Time
+            DateTime occurrenceEnd = CalendarUtils.GetOccurrenceEnd(item, occurrenceStart);
+            bool isSingleDay = occurrenceStart.Date == occurrenceEnd.Date;
 
-            // Little local function
-            DateTime startLocal = item.StartUtc.ToLocalTime();
-            DateTime endLocal = item.EndUtc.ToLocalTime();
-            bool isFirstDay = occurrenceDay.Date == startLocal.Date;
-            bool isLastDay = occurrenceDay.Date == endLocal.Date;
             string timeText;
-
-            if (item.AllDay)
+            if (item.AllDay && item.StartUtc.TimeOfDay == TimeSpan.Zero)
                 timeText = "All day";
-            else if (isFirstDay && isLastDay) // Single-day event
-                timeText = $"{startLocal:hh:mm tt} – {endLocal:hh:mm tt}";
-            else if (isFirstDay) // First day of multi-day event
-                timeText = $"{startLocal:hh:mm tt} →";
-            else if (isLastDay)// Last day of multi-day event
-                timeText = $"→ {endLocal:hh:mm tt}";
-            else // Middle day of multi-day event
-                timeText = "All day";
+            else if (isSingleDay) // TODO: newlines cause small text because height is set for one line
+                timeText = mode == ViewMode.Compact
+                    ? $"{occurrenceStart:hh:mm tt}\n – \n{occurrenceEnd:hh:mm tt}"
+                    : $"{occurrenceStart:hh:mm tt} – {occurrenceEnd:hh:mm tt}";
+            else
+                timeText = $"{occurrenceStart:hh:mm tt} → {occurrenceEnd:hh:mm tt}";
 
             timeLabel.text = timeText;
 
-            // Title
             titleLabel.text = item.Title;
 
-            // Reminder
             reminderIcon.SetActive(_item.Type == CalendarItemType.Reminder);
 
-            // Repeat
             repeatIcon.SetActive(_item.RepeatRule != null);
             repeatLabel.text = item.RepeatRule != null
-                ? RepeatFormatter.ToReadableText(item.RepeatRule)
+                ? CalendarUtils.RepeatRuleToReadableText(item.RepeatRule)
                 : "";
             repeatLabel.gameObject.SetActive(item.RepeatRule != null);
         }
@@ -62,6 +70,27 @@ namespace LocalCalendar.Calendar
         {
             // open EditItemScene
             _onClick?.Invoke(_item);
+        }
+
+        private void ApplyMode()
+        {
+            var rect = gameObject.GetComponent<RectTransform>();
+            switch (mode)
+            {
+                case ViewMode.Compact:
+                    //rect.localScale = new Vector3(0.5f, 0.5f, 1f);
+                    repeatLabel.gameObject.SetActive(false);
+                    break;
+
+                default:
+                case ViewMode.Full:
+                    //rect.localScale = new Vector3(1f, 1f, 1f);
+                    repeatLabel.gameObject.SetActive(true);
+                    break;
+            }
+            
+            //LayoutRebuilder.ForceRebuildLayoutImmediate(rect); // Need the parent RectTransform..
+            //Canvas.ForceUpdateCanvases();
         }
     }
 }

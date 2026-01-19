@@ -4,7 +4,6 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using LocalCalendar.Data;
-using LocalCalendar.Services;
 
 namespace LocalCalendar.Calendar
 {
@@ -20,18 +19,17 @@ namespace LocalCalendar.Calendar
             => (int)new DateTime(year, month, 1).DayOfWeek; // 0 = Sunday
 
         // GetExpandedMonthItems
-        public static IOrderedEnumerable<IGrouping<DateTime, (DateTime date, CalendarItem item)>>
+        public static IOrderedEnumerable<IGrouping<DateTime, (DateTime date, CalendarItem item, DateTime occurrenceStart)>>
             GetExpandedMonthItems(CalendarRepository repo, DateTime rangeStart, DateTime rangeEnd)
         {
             var items = repo.GetItemsForMonth(rangeStart);
-            var expanded = new List<(DateTime date, CalendarItem item)>();
+            var expanded = new List<(DateTime date, CalendarItem item, DateTime occurrenceStart)>();
 
             foreach (var item in items)
             {
-                foreach (var occurrenceStartUtc in
+                foreach (DateTime occurrenceStartLocal in
                          RecurrenceExpander.ExpandOccurrences(item, rangeStart, rangeEnd))
                 {
-                    DateTime occurrenceStartLocal = occurrenceStartUtc.ToLocalTime();
                     DateTime occurrenceEndLocal = CalendarUtils.GetOccurrenceEnd(item, occurrenceStartLocal);
                     DateTime dayCursor = occurrenceStartLocal.Date;
                     DateTime lastDay = occurrenceEndLocal.Date;
@@ -47,7 +45,7 @@ namespace LocalCalendar.Calendar
                                 occurrenceEndLocal > dayStart;
 
                             if (overlaps)
-                                expanded.Add((dayCursor, item));
+                                expanded.Add((dayCursor, item, occurrenceStartLocal));
                         }
 
                         dayCursor = dayCursor.AddDays(1);
@@ -60,13 +58,14 @@ namespace LocalCalendar.Calendar
                 .OrderBy(g => g.Key);
         }
 
-        public static List<CalendarItem> GetExpandedDayItems(CalendarRepository repo, DateTime localDate)
+        // GetExpandedDayItems
+        public static List<(CalendarItem item, DateTime occurrenceStart)> GetExpandedDayItems(CalendarRepository repo, DateTime localDate)
         {
             DateTime dayStart = localDate.Date;
             DateTime dayEnd = dayStart.AddDays(1);
 
             var candidates = repo.GetItemsForDay(localDate);
-            var result = new List<CalendarItem>();
+            var result = new List<(CalendarItem item, DateTime occurrenceStart)>();
 
             foreach (var item in candidates)
             {
@@ -77,7 +76,7 @@ namespace LocalCalendar.Calendar
                     DateTime endLocal = CalendarUtils.GetOccurrenceEnd(item, startLocal);
 
                     if (startLocal < dayEnd && endLocal > dayStart)
-                        result.Add(item);
+                        result.Add((item, startLocal));
 
                     continue;
                 }
@@ -89,16 +88,15 @@ namespace LocalCalendar.Calendar
 
                 DateTime expandStart = dayStart - duration;
 
-                foreach (var occStartUtc in
+                foreach (DateTime occurrenceStartLocal in
                          RecurrenceExpander.ExpandOccurrences(item, expandStart, dayEnd))
                 {
-                    DateTime occStartLocal = occStartUtc.ToLocalTime();
-                    DateTime occEndLocal =
-                        CalendarUtils.GetOccurrenceEnd(item, occStartLocal);
+                    DateTime occurrenceEndLocal =
+                        CalendarUtils.GetOccurrenceEnd(item, occurrenceStartLocal);
 
-                    if (occStartLocal < dayEnd && occEndLocal > dayStart)
+                    if (occurrenceStartLocal < dayEnd && occurrenceEndLocal > dayStart)
                     {
-                        result.Add(item);
+                        result.Add((item, occurrenceStartLocal));
                         break;
                     }
                 }
@@ -144,6 +142,33 @@ namespace LocalCalendar.Calendar
             float cellHeight = usableHeight / rows;
 
             return new Vector2(cellWidth, cellHeight);
+        }
+
+        // RepeatRule printout
+        public static string RepeatRuleToReadableText(RepeatRule rule)
+        {
+            if (rule == null)
+                return string.Empty;
+
+            string unit = rule.Unit switch
+            {
+                RepeatUnit.Day => "day",
+                RepeatUnit.Week => "week",
+                RepeatUnit.Month => "month",
+                RepeatUnit.Year => "year",
+                _ => ""
+            };
+
+            string plural = rule.Interval > 1 ? "s" : "";
+
+            string text = $"Every {rule.Interval} {unit}{plural}";
+
+            if (rule.UntilUtc.HasValue)
+            {
+                text += $" until {rule.UntilUtc.Value.ToLocalTime():MMM d}";
+            }
+
+            return text;
         }
     }
 }

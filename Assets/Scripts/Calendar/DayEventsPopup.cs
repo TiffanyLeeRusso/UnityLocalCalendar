@@ -4,7 +4,6 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using LocalCalendar.App;
 using LocalCalendar.Data;
 using LocalCalendar.EditItem;
 
@@ -55,7 +54,7 @@ namespace LocalCalendar.Calendar
             foreach(var item in dayItems)
             {
                 var row = Instantiate(rowPrefab, content);
-                row.Initialize(item, _currentDate, OnItemClicked);
+                row.Initialize(item.item, item.occurrenceStart, OnItemClicked);
             }
         }
 

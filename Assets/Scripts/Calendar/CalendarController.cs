@@ -5,7 +5,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using LocalCalendar.Data;
-using LocalCalendar.App;
 using LocalCalendar.Services;
 using LocalCalendar.EditItem;
 using LocalCalendar.Schedule;

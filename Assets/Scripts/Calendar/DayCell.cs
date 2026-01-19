@@ -10,7 +10,7 @@ namespace LocalCalendar.Calendar
     public class DayCell : MonoBehaviour
     {
         [SerializeField] private TextMeshProUGUI dayNumber;
-        [SerializeField] private Image background;
+        [SerializeField] private GameObject highlight;
         [SerializeField] private Transform eventsContainer;
         [SerializeField] private DayEventRow dayEventRowPrefab;
 
@@ -22,7 +22,7 @@ namespace LocalCalendar.Calendar
             DateTime date,
             bool isToday,
             bool isCurrentMonth,
-            List<CalendarItem> items,
+            List<(CalendarItem item, DateTime occurrenceStart)> items,
             Action<DateTime> onDayClicked,
             Action<CalendarItem> onItemClicked)
         {
@@ -33,14 +33,12 @@ namespace LocalCalendar.Calendar
             dayNumber.text = date.Day.ToString();
             dayNumber.color = isCurrentMonth ? Color.white : Color.gray;
 
-            background.color = isToday
-                ? new Color(0.5f, 0.3f, 0.9f)
-                : Color.clear;
+            highlight.SetActive(isToday);
 
             BuildRows(items);
         }
 
-        private void BuildRows(List<CalendarItem> items)
+        private void BuildRows(List<(CalendarItem item, DateTime occurrenceStart)> items)
         {
             foreach (Transform child in eventsContainer)
                 Destroy(child.gameObject);
@@ -48,7 +46,8 @@ namespace LocalCalendar.Calendar
             foreach (var item in items)
             {
                 var row = Instantiate(dayEventRowPrefab, eventsContainer);
-                row.Initialize(item, _date, _onItemClicked);
+                row.SetMode(DayEventRow.ViewMode.Compact);
+                row.Initialize(item.item, item.occurrenceStart, _onItemClicked);
             }
         }
 
