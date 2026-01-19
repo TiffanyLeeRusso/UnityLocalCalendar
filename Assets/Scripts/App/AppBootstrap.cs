@@ -2,8 +2,10 @@ using UnityEngine;
 using Unity.Notifications.Android;
 using UnityEngine.SceneManagement;
 using System;
+using System.Collections;
 using LocalCalendar.Data;
 using LocalCalendar.Notifications;
+using LocalCalendar.Permissions;
 using LocalCalendar.Services;
 using LocalCalendar.EditItem;
 using LocalCalendar.AppDebug;
@@ -13,6 +15,9 @@ namespace LocalCalendar.App
     public class AppBootstrap : MonoBehaviour
     {
         private static bool _initialized = false;
+#if UNITY_ANDROID && !UNITY_EDITOR
+        private bool _handlingIntent = false;
+#endif
 
         void Awake()
         {
@@ -32,13 +37,19 @@ namespace LocalCalendar.App
             LoggingService.Info(LogCategory.System, "App started");
         }
 
+        void OnEnable()
+        {
+            HandleNotificationIntent();
+        }
+
         void Start()
         {
+            // Register listeners
+#if UNITY_ANDROID && !UNITY_EDITOR
+            AndroidNotificationCenter.OnNotificationReceived += OnNotificationReceived;
+#endif
             // Schedule notifications once per app launch
             RescheduleNotifications();
-
-            // Register listeners
-            AndroidNotificationCenter.OnNotificationReceived += OnNotificationReceived;
 
             // If the app opened from a notification tap
             HandleNotificationIntent();
@@ -68,23 +79,44 @@ namespace LocalCalendar.App
             }
         }
 
+        private IEnumerator HandleIntentNextFrame(string itemId)
+        {
+            yield return null;
+
+            EditItemContext.EditingItemId = itemId;
+            SceneManager.LoadScene("EditItemScene");
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+            _handlingIntent = false;
+#endif
+        }
+
         private void HandleNotificationIntent()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
             var intent = AndroidNotificationCenter.GetLastNotificationIntent();
-            // If Android gave us an intent
-            if (intent != null && !string.IsNullOrEmpty(intent.Notification.IntentData))
-            {
-                // If this intent is to open an item
-                if (intent.Notification.IntentData.StartsWith("open:item:"))
-                {
-                    // Open the item
-                    var itemId = intent.Notification.IntentData.Replace("open:item:", "");
-                    LoggingService.Info(LogCategory.App, "Handling Android notification intent for reminder item with ID " + itemId);
-                    EditItemContext.EditingItemId = itemId;
-                    SceneManager.LoadScene("EditItemScene");
-                }
-            }
+
+            if (intent == null)
+                return;
+
+            var data = intent.Notification.IntentData;
+
+            if (string.IsNullOrEmpty(data))
+                return;
+
+            if (!data.StartsWith("open:item:"))
+                return;
+
+            if (_handlingIntent)
+                return;
+
+            _handlingIntent = true;
+
+            var itemId = data.Replace("open:item:", "");
+            LoggingService.Info(LogCategory.App,
+                                "Handling Android notification intent for item " + itemId);
+
+            StartCoroutine(HandleIntentNextFrame(itemId));
 #endif
         }
 
@@ -106,6 +138,8 @@ namespace LocalCalendar.App
             if (hasFocus)
             {
                 LoggingService.Info(LogCategory.App, "App focused");
+                if (PermissionsUtils.CanScheduleExactAlarms())
+                    LoggingService.Info(LogCategory.System, "Exact alarms granted");
 
                 // Handle intent when we resume focus (not from fresh app startup)
                 HandleNotificationIntent();
