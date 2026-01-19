@@ -54,7 +54,7 @@ namespace LocalCalendar.Calendar
             foreach(var item in dayItems)
             {
                 var row = Instantiate(rowPrefab, content);
-                row.Initialize(item.item, item.occurrenceStart, OnItemClicked);
+                row.Initialize(item.item, item.occurrenceStart, OnItemClicked, _currentDate);
             }
         }
 
@@ -65,9 +65,9 @@ namespace LocalCalendar.Calendar
             SceneManager.LoadScene("EditItemScene");
         }
 
-        private void OnItemClicked(CalendarItem item)
+        private void OnItemClicked((CalendarItem item, DateTime shownOnDate) args)
         {
-            EditItemContext.EditingItemId = item.Id;
+            EditItemContext.EditingItemId = args.item.Id;
             EditItemContext.SelectedDate = null;
 
             SceneManager.LoadScene("EditItemScene");

@@ -64,6 +64,10 @@ namespace LocalCalendar.Calendar
         {
             ClearGrid();
 
+            // Make sure we have the proper width before resizing
+            Canvas.ForceUpdateCanvases();
+            monthGridLayout.cellSize = CalendarUtils.ResizeGrid(monthGridLayout, monthGrid);
+            
             monthLabel.text = _currentMonth.ToString("MMMM yyyy");
 
             DateTime firstDay = new DateTime(_currentMonth.Year,
@@ -91,7 +95,7 @@ namespace LocalCalendar.Calendar
             }
 
             Canvas.ForceUpdateCanvases();
-            monthGridLayout.cellSize = CalendarUtils.ResizeGrid(monthGridLayout, monthGrid);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(monthGrid);
         }
 
         private void ClearGrid()
@@ -105,11 +109,9 @@ namespace LocalCalendar.Calendar
             dayEventsPopup.Show(date);
         }
 
-        private void OnItemClicked(CalendarItem item)
+        private void OnItemClicked((CalendarItem item, DateTime shownOnDate) args)
         {
-            OnDayClicked(item.StartUtc);
-            //EditItemContext.EditingItemId = item.Id;
-            //SceneManager.LoadScene("EditItemScene");
+            OnDayClicked(args.shownOnDate);
         }
 
         public void OpenSchedule()

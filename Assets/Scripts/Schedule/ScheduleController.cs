@@ -16,6 +16,7 @@ namespace LocalCalendar.Schedule
         [SerializeField] private Transform content;
         [SerializeField] private ScheduleDayHeader dayHeaderPrefab;
         [SerializeField] private DayEventRow itemRowPrefab;
+        [SerializeField] private RectTransform paddingPrefab;
 
         private CalendarRepository _repo;
         private DateTime _currentMonth;
@@ -62,14 +63,15 @@ namespace LocalCalendar.Schedule
                 foreach (var entry in groupItem.OrderBy(e => e.occurrenceStart))
                 {
                     var row = Instantiate(itemRowPrefab, content);
-                    row.Initialize(entry.item, entry.occurrenceStart, OnItemClicked);
+                    row.Initialize(entry.item, entry.occurrenceStart, OnItemClicked, groupItem.Key);
+                    Instantiate(paddingPrefab, content);
                 }
             }
         }
 
-        private void OnItemClicked(CalendarItem item)
+        private void OnItemClicked((CalendarItem item, DateTime shownOnDate) args)
         {
-            EditItemContext.EditingItemId = item.Id;
+            EditItemContext.EditingItemId = args.item.Id;
             SceneManager.LoadScene("EditItemScene");
         }
 

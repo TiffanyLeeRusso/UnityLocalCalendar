@@ -14,47 +14,52 @@ namespace LocalCalendar.Calendar
             Compact
         }
 
-        [SerializeField] private ViewMode mode;
-        [SerializeField] private TMP_InputField timeLabel;
         [SerializeField] private TMP_InputField titleLabel;
+        [SerializeField] private TMP_InputField timeLabel;
+        [SerializeField] private GameObject iconContainer;
         [SerializeField] private GameObject reminderIcon;
         [SerializeField] private GameObject repeatIcon;
         [SerializeField] private TextMeshProUGUI repeatLabel;
 
         private CalendarItem _item;
-        private Action<CalendarItem> _onClick;
+        private DateTime _shownOnDate;
+        private ViewMode _mode;
+        private Action<(CalendarItem item, DateTime shownOnDate)> _onClick;
 
-        void Awake()
-        {
-            ApplyMode();
-        }
-
-        public void SetMode(ViewMode newMode)
-        {
-            mode = newMode;
-            ApplyMode();
-        }
-
-        public void Initialize(CalendarItem item, DateTime occurrenceStart, Action<CalendarItem> onClick)
+        public void Initialize(CalendarItem item,
+                               DateTime occurrenceStart,
+                               Action<(CalendarItem item, DateTime shownOnDate)> onClick,
+                               DateTime shownOnDate,
+                               ViewMode mode = ViewMode.Full)
         {
             _item = item;
             _onClick = onClick;
+            _shownOnDate = shownOnDate;
 
             DateTime occurrenceEnd = CalendarUtils.GetOccurrenceEnd(item, occurrenceStart);
             bool isSingleDay = occurrenceStart.Date == occurrenceEnd.Date;
+            bool isFirstDay = shownOnDate.Date == occurrenceStart.Date;
+            bool isLastDay  = shownOnDate.Date == occurrenceEnd.Date;
 
             string timeText;
-            if (item.AllDay && item.StartUtc.TimeOfDay == TimeSpan.Zero)
+            if (item.AllDay || 
+                (occurrenceStart.TimeOfDay == TimeSpan.Zero &&
+                 (occurrenceEnd - occurrenceStart).TotalHours >= 23))
                 timeText = "All day";
-            else if (isSingleDay) // TODO: newlines cause small text because height is set for one line
+            else if (isSingleDay)
                 timeText = mode == ViewMode.Compact
                     ? $"{occurrenceStart:hh:mm tt}\n – \n{occurrenceEnd:hh:mm tt}"
                     : $"{occurrenceStart:hh:mm tt} – {occurrenceEnd:hh:mm tt}";
             else
-                timeText = $"{occurrenceStart:hh:mm tt} → {occurrenceEnd:hh:mm tt}";
-
+            {
+                if (isFirstDay)
+                    timeText = $"{occurrenceStart:hh:mm tt} →";
+                else if (isLastDay)
+                    timeText = $"→ {occurrenceEnd:hh:mm tt}";
+                else
+                    timeText = "→";
+            }
             timeLabel.text = timeText;
-
             titleLabel.text = item.Title;
 
             reminderIcon.SetActive(_item.Type == CalendarItemType.Reminder);
@@ -64,33 +69,35 @@ namespace LocalCalendar.Calendar
                 ? CalendarUtils.RepeatRuleToReadableText(item.RepeatRule)
                 : "";
             repeatLabel.gameObject.SetActive(item.RepeatRule != null);
+
+            _mode = mode;
+            ApplyMode();
         }
 
         public void OnClick()
         {
-            // open EditItemScene
-            _onClick?.Invoke(_item);
+            _onClick?.Invoke((item: _item, shownOnDate: _shownOnDate));
         }
 
         private void ApplyMode()
         {
-            var rect = gameObject.GetComponent<RectTransform>();
-            switch (mode)
+            bool isActive = true;
+            switch (_mode)
             {
                 case ViewMode.Compact:
-                    //rect.localScale = new Vector3(0.5f, 0.5f, 1f);
-                    repeatLabel.gameObject.SetActive(false);
+                    titleLabel.textComponent.fontSize = 30;
+                    isActive = false;
                     break;
 
                 default:
                 case ViewMode.Full:
-                    //rect.localScale = new Vector3(1f, 1f, 1f);
-                    repeatLabel.gameObject.SetActive(true);
+                    titleLabel.textComponent.fontSize = 50;
+                    isActive = true;
                     break;
             }
             
-            //LayoutRebuilder.ForceRebuildLayoutImmediate(rect); // Need the parent RectTransform..
-            //Canvas.ForceUpdateCanvases();
+            iconContainer.SetActive(isActive);
+            repeatLabel.gameObject.SetActive(isActive);
         }
     }
 }

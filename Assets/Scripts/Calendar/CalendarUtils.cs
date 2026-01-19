@@ -54,6 +54,9 @@ namespace LocalCalendar.Calendar
             }
 
             return expanded
+                .OrderBy(e => e.date)
+                .ThenBy(e => e.item.AllDay ? 0 : 1) // All-day items first
+                .ThenBy(e => e.occurrenceStart)
                 .GroupBy(e => e.date)
                 .OrderBy(g => g.Key);
         }
@@ -102,7 +105,11 @@ namespace LocalCalendar.Calendar
                 }
             }
 
-            return result;
+            return result
+                .OrderBy(r => r.item.AllDay ? 0 : 1)
+                .ThenBy(r => r.occurrenceStart)
+                .ThenBy(r => r.item.Title)
+                .ToList();
         }
 
         public static DateTime GetOccurrenceEnd(CalendarItem item, DateTime occurrenceStart)
