@@ -34,7 +34,7 @@ namespace LocalCalendar.EditItem
         public TMP_Dropdown reminderDropdown;
 
         [SerializeField] private GameObject deleteButton;
-    
+
         private CalendarRepository _repo;
         private CalendarItem _item;
         private bool _suppressTimeEvents;
@@ -260,14 +260,12 @@ namespace LocalCalendar.EditItem
             _suppressTimeEvents = false;
         }
 
-
         public void OnSavePressed()
         {
             try
             {
                 var item = BuildItemFromUI();
                 _repo.Save(item);
-                NotificationScheduler.Cancel(_item); // cancel old if editing
                 NotificationScheduler.Schedule(item);
 
                 EditItemContext.Clear();

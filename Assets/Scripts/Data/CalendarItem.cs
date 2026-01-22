@@ -13,7 +13,6 @@ namespace LocalCalendar.Data
     public class CalendarItem
     {
         public string Id;
-        public int? NotificationId;
         public CalendarItemType Type;
 
         public string Title;

@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using LocalCalendar.Calendar;
+using LocalCalendar.Services;
 
 namespace LocalCalendar.EditItem
 {
@@ -34,6 +35,11 @@ namespace LocalCalendar.EditItem
         void OnEnable()
         {
             Canvas.willRenderCanvases += OnWillRenderCanvases;
+            if (CalendarRefreshSignal.NeedsRefresh)
+            {
+                CalendarRefreshSignal.NeedsRefresh = false;
+                Refresh();
+            }
         }
 
         void OnDisable()

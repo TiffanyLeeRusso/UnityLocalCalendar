@@ -1,22 +1,22 @@
 using UnityEngine;
-using Unity.Notifications.Android;
 using UnityEngine.SceneManagement;
+using Unity.Notifications.Android;
 using System;
 using System.Collections;
 using LocalCalendar.Data;
 using LocalCalendar.Notifications;
-using LocalCalendar.Permissions;
 using LocalCalendar.Services;
-using LocalCalendar.EditItem;
 using LocalCalendar.AppDebug;
+using LocalCalendar.EditItem;
 
 namespace LocalCalendar.App
 {
     public class AppBootstrap : MonoBehaviour
     {
         private static bool _initialized = false;
+        private static DateTime _lastKnownDate;
 #if UNITY_ANDROID && !UNITY_EDITOR
-        private bool _handlingIntent = false;
+        private static bool _handlingIntent = false;
 #endif
 
         void Awake()
@@ -27,6 +27,7 @@ namespace LocalCalendar.App
                 return;
             }
             _initialized = true;
+            _lastKnownDate = DateTime.Today;
             DontDestroyOnLoad(gameObject);
 
             // Initialization
@@ -34,12 +35,18 @@ namespace LocalCalendar.App
             NotificationInitializer.Initialize();
             GlobalExceptionHandler.Init();
 
+            // Note playerprefs and DB may be saved from Google Auto Backup
+            // or Cloud restore even on reinstall unless we want to disable
+            // backups explicitly (in the manifest:
+            //<application android:allowBackup="false" android:fullBackupContent="false">)
+            if (!PlayerPrefs.HasKey("installed"))
+            {
+                NotificationScheduler.CancelAll();
+                PlayerPrefs.SetInt("installed", 1);
+                PlayerPrefs.Save();
+            }
+            
             LoggingService.Info(LogCategory.System, "App started");
-        }
-
-        void OnEnable()
-        {
-            HandleNotificationIntent();
         }
 
         void Start()
@@ -53,6 +60,15 @@ namespace LocalCalendar.App
 
             // If the app opened from a notification tap
             HandleNotificationIntent();
+        }
+
+        // Handle the DB-import message from our Java PickerHelper.
+        // Note the PickerHelper defines exactly who receives this message;
+        // currently it is AppBootstrap::OnReceiveUri so make sure they stay in sync.
+        public void OnReceiveUri(string uriString)
+        {
+            LoggingService.Info(LogCategory.App, "Received URI from Android: " + uriString);
+            AppUtils.ImportFromUri(uriString);
         }
 
         private void RescheduleNotifications()
@@ -79,18 +95,8 @@ namespace LocalCalendar.App
             }
         }
 
-        private IEnumerator HandleIntentNextFrame(string itemId)
-        {
-            yield return null;
-
-            EditItemContext.EditingItemId = itemId;
-            SceneManager.LoadScene("EditItemScene");
-
-#if UNITY_ANDROID && !UNITY_EDITOR
-            _handlingIntent = false;
-#endif
-        }
-
+        // --- Intent handling ---
+        
         private void HandleNotificationIntent()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -101,14 +107,9 @@ namespace LocalCalendar.App
 
             var data = intent.Notification.IntentData;
 
-            if (string.IsNullOrEmpty(data))
-                return;
-
-            if (!data.StartsWith("open:item:"))
-                return;
-
-            if (_handlingIntent)
-                return;
+            if (string.IsNullOrEmpty(data)) return;
+            if (!data.StartsWith("open:item:")) return;
+            if (_handlingIntent) return;
 
             _handlingIntent = true;
 
@@ -120,6 +121,19 @@ namespace LocalCalendar.App
 #endif
         }
 
+        private static IEnumerator HandleIntentNextFrame(string itemId)
+        {
+            yield return null;
+
+            EditItemContext.EditingItemId = itemId;
+            SceneManager.LoadScene("EditItemScene");
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+            _handlingIntent = false;
+#endif
+        }
+
+        
         // --- Event Handling ---
 
         private void OnNotificationReceived(AndroidNotificationIntentData data)
@@ -137,23 +151,21 @@ namespace LocalCalendar.App
         {
             if (hasFocus)
             {
-                LoggingService.Info(LogCategory.App, "App focused");
-                if (PermissionsUtils.CanScheduleExactAlarms())
-                    LoggingService.Info(LogCategory.System, "Exact alarms granted");
-
-                // Handle intent when we resume focus (not from fresh app startup)
+                // Handle intent when we resume focus
                 HandleNotificationIntent();
-            }
-            else
-            {
-                LoggingService.Info(LogCategory.App, "App not focused");
+
+                if (DateTime.Today != _lastKnownDate)
+                {
+                    _lastKnownDate = DateTime.Today;
+                    CalendarRefreshSignal.NeedsRefresh = true;
+                }
             }
         }
 
-        private void OnApplicationPause(bool paused)
+        void OnApplicationPause(bool paused)
         {
-            LoggingService.Info(LogCategory.App,
-                                paused ? "App paused" : "App resumed");
+            if (!paused)
+                OnApplicationFocus(true);
         }
 
         private void OnApplicationQuit()

@@ -69,7 +69,7 @@ namespace LocalCalendar.Calendar
             Canvas.ForceUpdateCanvases();
             monthGridLayout.cellSize = CalendarUtils.ResizeGrid(monthGridLayout, monthGrid);
             weekdayHeader.Build(monthGridLayout.cellSize.x);
-
+            
             monthLabel.text = _currentMonth.ToString("MMMM yyyy");
 
             DateTime firstDay = new DateTime(_currentMonth.Year,
