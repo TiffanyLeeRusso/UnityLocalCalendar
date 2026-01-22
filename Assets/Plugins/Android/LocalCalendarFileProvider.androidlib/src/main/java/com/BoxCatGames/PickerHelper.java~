@@ -1,0 +1,36 @@
+package com.BoxCatGames;
+
+import android.app.Fragment;
+import android.content.Intent;
+import android.os.Bundle;
+
+public class PickerHelper extends Fragment {
+    private static final int REQUEST_CODE = 4242;
+    // Callback to Unity
+    public static void launchPicker(android.app.Activity activity) {
+        PickerHelper fragment = new PickerHelper();
+        activity.getFragmentManager().beginTransaction().add(fragment, "PickerFragment").commit();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        startActivityForResult(intent, REQUEST_CODE);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_CODE) {
+            if (resultCode == -1 && data != null && data.getData() != null) {
+                // Send the URI string back to a Unity GameObject named "AppBootstrap" 
+                // and a method named "OnReceiveUri"
+                com.unity3d.player.UnityPlayer.UnitySendMessage("AppBootstrap", "OnReceiveUri", data.getData().toString());
+            }
+            getFragmentManager().beginTransaction().remove(this).commit();
+        }
+    }
+}
+

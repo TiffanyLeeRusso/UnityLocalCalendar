@@ -1,0 +1,20 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 34 // Or your target version
+    
+    defaultConfig {
+        minSdkVersion 23
+        targetSdkVersion 34
+    }
+}
+
+dependencies {
+    // This looks for the Unity classes jar provided by the Unity Editor
+    compileOnly files(new File(System.getenv('UNITY_PATH') ?: "", "../../Data/PlaybackEngines/AndroidPlayer/Variations/mono/Release/Classes/classes.jar"))
+    
+    // If the above env variable fails, Unity 6 usually finds it automatically 
+    // if you use the "Unity Jar Resolver" or simply use this relative path:
+    compileOnly fileTree(dir: 'libs', include: ['*.jar'])
+    compileOnly 'androidx.annotation:annotation:1.6.0'
+}
