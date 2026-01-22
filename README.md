@@ -11,9 +11,6 @@ Core goals:
 * Work fully offline.
 * Support repeating and multi-day events.
 * Provide multiple views (Month grid, Day popup, Schedule list).
-* Handle real-world calendar complexity inside Unity's layout system.
-
-The project intentionally treats calendar logic as data + expansion + presentation, rather than hard-coding behavior into UI.
 
 <img src="https://github.com/TiffanyLeeRusso/UnityLocalCalendar/blob/main/Screenshots/1_CalendarScene.jpg" alt="Calendar View" style="width:50%; height:auto;">
 <img src="https://github.com/TiffanyLeeRusso/UnityLocalCalendar/blob/main/Screenshots/2_ScheduleScene.jpg" alt="Schedule View" style="width:50%; height:auto;">
