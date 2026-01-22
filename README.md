@@ -15,10 +15,8 @@ Core goals:
 
 The project intentionally treats calendar logic as data + expansion + presentation, rather than hard-coding behavior into UI.
 
-[![Calendar View](https://github.com/TiffanyLeeRusso/UnityLocalCalendar/blob/main/Screenshots/1_CalendarScene.jpg)]
-
-[![Schedule View](https://github.com/TiffanyLeeRusso/UnityLocalCalendar/blob/main/Screenshots/2_ScheduleScene.jpg)]
-
+<img src="https://github.com/TiffanyLeeRusso/UnityLocalCalendar/blob/main/Screenshots/1_CalendarScene.jpg" alt="Calendar View" style="width:50%; height:auto;">
+<img src="https://github.com/TiffanyLeeRusso/UnityLocalCalendar/blob/main/Screenshots/2_ScheduleScene.jpg" alt="Schedule View" style="width:50%; height:auto;">
 
 ## Features Implemented
 
