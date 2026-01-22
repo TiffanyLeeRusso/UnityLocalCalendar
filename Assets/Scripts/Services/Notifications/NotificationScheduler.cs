@@ -17,6 +17,7 @@ namespace LocalCalendar.Notifications
     public static class NotificationScheduler
     {
         public const int EarlyFireBufferMinutes = 2;
+        private const int UpcomingOccurrencesToSchedule = 20;
 
         public static ReminderTiming GetReminderTiming(CalendarItem item)
         {
@@ -43,13 +44,15 @@ namespace LocalCalendar.Notifications
             if (item.Type != CalendarItemType.Reminder || item.Reminder == null)
                 return;
 
+            Cancel(item);
+
             if (item.RepeatRule == null)
             {
                 ScheduleSingleNotification(item, item.StartUtc);
                 return;
             }
 
-            foreach (var occurrence in RecurrenceExpander.GetUpcomingOccurrences(item, 20))
+            foreach (var occurrence in RecurrenceExpander.GetUpcomingOccurrences(item, UpcomingOccurrencesToSchedule))
             {
                 ScheduleSingleNotification(item, occurrence);
             }
@@ -65,25 +68,24 @@ namespace LocalCalendar.Notifications
                 ScheduledLocal = item.StartUtc.ToLocalTime(),
                 Note = "Immediately firing late notification"
             });
-            ScheduleSingleNotification(item, DateTime.Now.AddSeconds(2));
+
+            // Create a startUtc for ScheduleSingleNotification
+            DateTime fakeStartUtc = DateTime.UtcNow - item.Reminder.Offset
+                + TimeSpan.FromMinutes(EarlyFireBufferMinutes)
+                + TimeSpan.FromSeconds(2);
+            ScheduleSingleNotification(item, fakeStartUtc);
         }
 
         private static void ScheduleSingleNotification(CalendarItem item, DateTime startUtc)
         {
-            Cancel(item);
-
             // Exact time commented out. Since Android does not guarantee exact delivery time
             // for local notifcations we schedule notifications slightly beforehand.
             /*DateTime nextUtc = RecurrenceExpander
                 .ExpandOccurrences(item, DateTime.UtcNow, DateTime.UtcNow.AddYears(1))
-                .FirstOrDefault()
-                .ToUniversalTime();*/
-            DateTime fireTimeUtc =
-                startUtc
-                + item.Reminder.Offset
-                - TimeSpan.FromMinutes(EarlyFireBufferMinutes);
-            if (fireTimeUtc <= DateTime.UtcNow)
-                fireTimeUtc = DateTime.UtcNow.AddSeconds(5);
+                .FirstOrDefault().ToUniversalTime();*/
+            DateTime fireTimeUtc = ComputeFireTimeUtc(item, startUtc);
+            // Do not fire notifications for previous times
+            //if (fireTimeUtc <= DateTime.UtcNow) fireTimeUtc = DateTime.UtcNow.AddSeconds(5);
             DateTime fireTimeLocal = fireTimeUtc.ToLocalTime();
 
             if (fireTimeLocal <= DateTime.Now)
@@ -102,17 +104,17 @@ namespace LocalCalendar.Notifications
                 LargeIcon = "icon_large"
             };
 
-            int id = AndroidNotificationCenter.SendNotification(
+            int notificationId = GetNotificationId(item, fireTimeUtc);
+            AndroidNotificationCenter.SendNotificationWithExplicitID(
                 notification,
-                NotificationInitializer.Channel
+                NotificationInitializer.Channel,
+                notificationId
             );
-
-            // Save notification ID for later cancel/update
-            item.NotificationId = id;
 
             NotificationLogger.Log(new NotificationLogEntry
             {
                 ItemId = item.Id,
+                NotificationId = notificationId,
                 Title = item.Title,
                 IntendedUtc = item.StartUtc + item.Reminder.Offset,
                 ScheduledLocal = fireTimeLocal,
@@ -122,11 +124,56 @@ namespace LocalCalendar.Notifications
 
         public static void Cancel(CalendarItem item)
         {
-            if (item.NotificationId.HasValue)
+            if (item.Type != CalendarItemType.Reminder || item.Reminder == null)
+                return;
+
+            if (item.RepeatRule == null)
             {
-                AndroidNotificationCenter.CancelNotification(
-                    item.NotificationId.Value);
+                CancelSingleNotification(item, item.StartUtc);
+                return;
             }
+
+            foreach (var occurrence in RecurrenceExpander.GetUpcomingOccurrences(item, UpcomingOccurrencesToSchedule))
+            {
+                CancelSingleNotification(item, occurrence);
+            }
+        }
+
+        private static void CancelSingleNotification(CalendarItem item, DateTime startUtc)
+        {
+            int notificationId = GetNotificationId(item, ComputeFireTimeUtc(item, startUtc));
+            NotificationLogger.Log(new NotificationLogEntry
+            {
+                ItemId = item.Id,
+                NotificationId = notificationId,
+                Title = item.Title,
+                IntendedUtc = startUtc + item.Reminder.Offset,
+                Note = "Cancelled"
+            });
+
+            AndroidNotificationCenter.CancelNotification(notificationId);
+        }
+
+        public static void CancelAll()
+        {
+            AndroidNotificationCenter.CancelAllScheduledNotifications();
+            AndroidNotificationCenter.CancelAllDisplayedNotifications();
+        }
+
+        public static int GetNotificationId(CalendarItem item, DateTime fireTimeUtc)
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 23 + item.Id.GetHashCode();
+                hash = hash * 23 + fireTimeUtc.Ticks.GetHashCode();
+                return hash;
+            }
+        }
+
+        private static DateTime ComputeFireTimeUtc(CalendarItem item, DateTime startUtc)
+        {
+            return startUtc + item.Reminder.Offset - TimeSpan.FromMinutes(EarlyFireBufferMinutes);
         }
     }
 }

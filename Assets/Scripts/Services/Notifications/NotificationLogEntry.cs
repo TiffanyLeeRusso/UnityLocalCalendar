@@ -6,6 +6,7 @@ namespace LocalCalendar.Notifications
     public class NotificationLogEntry
     {
         public string ItemId;
+        public int NotificationId;
         public string Title;
         public DateTime IntendedUtc;
         public DateTime ScheduledLocal;

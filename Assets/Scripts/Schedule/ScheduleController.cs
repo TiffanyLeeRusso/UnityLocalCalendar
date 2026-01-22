@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using LocalCalendar.Data;
 using LocalCalendar.Calendar;
+using LocalCalendar.Services;
 using LocalCalendar.EditItem;
 
 namespace LocalCalendar.Schedule
@@ -29,6 +30,15 @@ namespace LocalCalendar.Schedule
 
             ScheduleContext.Clear();
             BuildSchedule();
+        }
+
+        void OnEnable()
+        {
+            if (CalendarRefreshSignal.NeedsRefresh)
+            {
+                CalendarRefreshSignal.NeedsRefresh = false;
+                BuildSchedule();
+            }
         }
 
         public void PrevMonth()

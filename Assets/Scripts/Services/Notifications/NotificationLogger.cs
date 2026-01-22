@@ -21,8 +21,8 @@ namespace LocalCalendar.Notifications
             if (!string.IsNullOrEmpty(e.ItemId))
                 sb.AppendLine($"ItemId: {e.ItemId}");
 
+            sb.AppendLine($"NotificationId: {e.NotificationId}");
             sb.AppendLine($"Intended (UTC): {e.IntendedUtc}");
-
             sb.AppendLine($"Scheduled (local): {e.ScheduledLocal}");
 
             if (e.FiredLocal.HasValue)
