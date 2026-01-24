@@ -8,7 +8,7 @@ This project includes internal functionality for recurrence expansion, time-zone
 LocalCalendar is a custom calendar system implemented entirely in Unity. Instead of using iOS/Android calendar APIs, it stores events locally and renders them with Unity UI.
 
 Core goals:
-* Work fully offline.
+* Work fully offline, including exporting and importing the database if needed.
 * Support repeating and multi-day events.
 * Provide multiple views (Month grid, Day popup, Schedule list).
 
@@ -115,12 +115,12 @@ Expansion always happens at query time, not at storage time.
 
 ### Possible Future Improvements / Known Issues
 * The text-input cursor still doesn't show up on Android.
-* Notifications are a best-try case. Android doesn't guarantee timely notifications even with exact-alarm permissions and unrestricted battery usage.
 * Time zone switching.
 * Search-event functionality.
 * UX niceties like multi-day bars in month grid, event colors, day and/or event emojis or stickers.
 * Investigate the font-displacement and kerning issues.
 * Use the DatePicker (with a clear button) for repetition end in EditItem scene.
-* Setting to start week on Sun or Mon
-* Keeping track of previous screen instead of defaulting back to the Calendar scene in today's month
-* Implement the phone's back button
+* Setting to start week on Sun or Mon.
+* Keeping track of previous screen instead of defaulting back to the Calendar scene in today's month.
+* Implement the phone's back button.
+* Add UX for import success and failure.
