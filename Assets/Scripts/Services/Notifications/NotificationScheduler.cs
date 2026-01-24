@@ -175,6 +175,21 @@ namespace LocalCalendar.Notifications
         {
             return startUtc + item.Reminder.Offset - TimeSpan.FromMinutes(EarlyFireBufferMinutes);
         }
+
+        public static void SendTestNotification()
+        {
+            var notification = new AndroidNotification
+            {
+                Title = "Test Notification",
+                Text = "If you see this, notifications are working.",
+                FireTime = DateTime.Now.AddSeconds(10)
+            };
+
+            AndroidNotificationCenter.SendNotification(
+                notification,
+                NotificationInitializer.Channel
+            );
+        }
     }
 }
 
