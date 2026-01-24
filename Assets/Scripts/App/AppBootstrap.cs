@@ -68,7 +68,7 @@ namespace LocalCalendar.App
         public void OnReceiveUri(string uriString)
         {
             LoggingService.Info(LogCategory.App, "Received URI from Android: " + uriString);
-            AppUtils.ImportFromUri(uriString);
+            Database.ImportFromUri(uriString);
         }
 
         private void RescheduleNotifications()

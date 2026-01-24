@@ -1,0 +1,170 @@
+using System;
+using System.IO;
+using UnityEngine;
+//using LocalCalendar.Models;
+using LocalCalendar.Services;
+
+namespace LocalCalendar.Data
+{
+    public static class AndroidDatabase
+    {
+        public static void ExportDB()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            // --- prepare export file ---
+            string exportPath = Path.Combine(Application.temporaryCachePath, $"LocalCalendarBackup_{DateTime.Now:yyyyMMdd_HHmm}.db");
+
+            try
+            {
+                Database.ShutdownForFileAccess(); // DB is now a single, solid file on disk
+                // Wait a tiny bit to let the OS release file handles
+                System.Threading.Thread.Sleep(100);
+                File.Copy(Database.DB_PATH, exportPath, true);
+                using var file = new AndroidJavaObject("java.io.File", exportPath);
+
+                LoggingService.Info(LogCategory.DB, $"[Export] File exists: {File.Exists(exportPath)}");
+                LoggingService.Info(LogCategory.DB, $"[Export] Full Path: {exportPath}");
+
+                // 1. Get the FileProvider class (Note the Capital 'P')
+                using var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                using var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+                using var uriClass = new AndroidJavaClass("androidx.core.content.FileProvider");
+
+                // 2. Generate the Content URI
+                string pkgAuthority = activity.Call<string>("getPackageName") + ".fileprovider";
+                var uri = uriClass.CallStatic<AndroidJavaObject>("getUriForFile", activity, pkgAuthority, file);
+
+                // 3. Set up the Intent
+                using var intent = new AndroidJavaObject("android.content.Intent");
+                intent.Call<AndroidJavaObject>("setAction", "android.intent.action.SEND");
+                intent.Call<AndroidJavaObject>("setType", "application/octet-stream");
+                intent.Call<AndroidJavaObject>("putExtra", "android.intent.extra.STREAM", uri);
+                int flagRead = intent.GetStatic<int>("FLAG_GRANT_READ_URI_PERMISSION");
+                int flagWrite = intent.GetStatic<int>("FLAG_GRANT_WRITE_URI_PERMISSION");
+                intent.Call<AndroidJavaObject>("addFlags", flagRead | flagWrite);
+
+                // 5. Show Chooser
+                // Name the share dialog instead of using the default system dialog.
+                using var chooser = intent.CallStatic<AndroidJavaObject>("createChooser", intent, "Export Calendar Backup");
+                activity.Call("startActivity", chooser);
+            }
+            catch (Exception e)
+            {
+                LoggingService.Error(LogCategory.DB, "DB export failed: " + e);
+                return;
+            }
+            finally
+            {
+                Database.Open();
+            }
+#endif
+        }
+
+        public static void ImportDB()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            using var helper = new AndroidJavaClass("com.BoxCatGames.PickerHelper");
+            using var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+            using var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+
+            helper.CallStatic("launchPicker", activity);
+#endif
+        }
+
+        // ImportFromUri
+        // Pull in the file and overwrite the DB
+        public static void ImportFromUri(string uriString)
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            string tempPath = Path.Combine(Application.temporaryCachePath, "import_check.db");
+
+            try
+            {
+                using var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                using var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+                using var uriClass = new AndroidJavaClass("android.net.Uri");
+                using var uri = uriClass.CallStatic<AndroidJavaObject>("parse", uriString);
+                using var resolver = activity.Call<AndroidJavaObject>("getContentResolver");
+
+                // 1. Single Scope for Permissions and Streams
+                using (var intentClass = new AndroidJavaClass("android.content.Intent"))
+                {
+                    try {
+                        int readFlag = intentClass.GetStatic<int>("FLAG_GRANT_READ_URI_PERMISSION");
+                        resolver.Call("takePersistableUriPermission", uri, readFlag);
+                    } catch { /* Non-persistable providers throw here, ignore */ }
+                }
+
+                using (var inputStream = resolver.Call<AndroidJavaObject>("openInputStream", uri))
+                using (var outputStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    int totalBytesCopied = 0;
+
+                    // We'll read in smaller chunks to ensure JNI stability
+                    int chunkSize = 8192;
+
+                    while (true) // "trust me" lol
+                    {
+                        // 1. Call Java to read data into a NEW Java-side byte array
+                        // This is more "expensive" but 100% reliable for JNI
+                        byte[] javaBuffer = inputStream.Call<byte[]>("readNBytes", chunkSize);
+
+                        if (javaBuffer == null || javaBuffer.Length == 0)
+                            break;
+
+                        // 2. Write the returned array directly to our C# FileStream
+                        outputStream.Write(javaBuffer, 0, javaBuffer.Length);
+                        totalBytesCopied += javaBuffer.Length;
+
+                        if (javaBuffer.Length < chunkSize)
+                            break; // End of stream
+                    }
+
+                    outputStream.Flush(true);
+                    LoggingService.Info(LogCategory.DB, $"Stream copy finished. Total bytes: {totalBytesCopied}");
+                }
+
+                // 2. DB Validation
+                if (Database.IsValidDatabase(tempPath))
+                {
+                    // Close the current DB before swapping
+                    Database.ShutdownForFileAccess(); // Ensure current file isn't locked
+                    // Give the OS a moment to release the file lock
+                    System.Threading.Thread.Sleep(200);
+                    // Explicitly Nullify any references
+                    System.GC.Collect();
+                    System.GC.WaitForPendingFinalizers();
+
+                    try
+                    {
+                        if (File.Exists(Database.DB_PATH)) File.Delete(Database.DB_PATH);
+                        File.Move(tempPath, Database.DB_PATH);
+                    }
+                    catch (IOException ioEx)
+                    {
+                        LoggingService.Error(LogCategory.DB, "File Swap failed (Lock Issue): " + ioEx.Message);
+                        return;
+                    }
+
+                    // Clear any static connection references
+                    Database.Open();
+                    Database.Initialize();
+                    LoggingService.Info(LogCategory.DB, "Import successful!");
+                }
+                else
+                {
+                    LoggingService.Error(LogCategory.DB, "Invalid file: Header mismatch.");
+                }
+            }
+            catch (Exception e)
+            {
+                LoggingService.Error(LogCategory.DB, "Import failed: " + e.Message);
+            }
+            finally
+            {
+                if (File.Exists(tempPath)) File.Delete(tempPath);
+            }
+#endif
+        }
+    }
+}
