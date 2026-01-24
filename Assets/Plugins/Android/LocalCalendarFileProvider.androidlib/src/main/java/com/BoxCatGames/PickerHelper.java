@@ -7,6 +7,7 @@ import java.lang.reflect.Method;
 
 public class PickerHelper extends Fragment {
     private static final int REQUEST_CODE = 4242;
+    private boolean mPickerOpened = false;
 
     public static void launchPicker(android.app.Activity activity) {
         PickerHelper fragment = new PickerHelper();
@@ -16,10 +17,15 @@ public class PickerHelper extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("*/*");
-        startActivityForResult(intent, REQUEST_CODE);
+
+        // Only launch the intent once per fragment instance
+        if (!mPickerOpened) {
+            mPickerOpened = true;
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("*/*");
+            startActivityForResult(intent, REQUEST_CODE);
+        }
     }
 
     @Override
@@ -28,6 +34,7 @@ public class PickerHelper extends Fragment {
             // resultCode -1 is Activity.RESULT_OK
             if (resultCode == -1 && data != null && data.getData() != null) {
                 String uriString = data.getData().toString();
+                //getContentResolver().takePersistableUriPermission(data.getData(), Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 unitySendMessage("AppBootstrap", "OnReceiveUri", uriString);
             }
             
