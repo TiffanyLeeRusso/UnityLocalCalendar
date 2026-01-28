@@ -10,7 +10,6 @@ namespace LocalCalendar.App
 {
     public static class AppUtils
     {
-        
         // --- UI helpers ---
 
         public static IEnumerator Fade(CanvasGroup g, float from, float to, float duration)

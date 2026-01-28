@@ -1,10 +1,12 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using LocalCalendar.Data;
+using LocalCalendar.App;
 using LocalCalendar.Services;
 using LocalCalendar.EditItem;
 using LocalCalendar.Schedule;
@@ -18,15 +20,17 @@ namespace LocalCalendar.Calendar
         [SerializeField] private WeekdayHeaderRow weekdayHeader;
         [SerializeField] private DayCell dayCellPrefab;
         [SerializeField] private DayEventsPopup dayEventsPopup;
+        [SerializeField] private SidePanelPopover sideMenuPopover;
 
-        private DateTime _currentMonth;
         private CalendarRepository _repo;
         private GridLayoutGroup monthGridLayout;
+        // Keep track of screen size for orientation changes
+        private float _lastWidth;
+        private float _lastHeight;
 
         void Awake()
         {
             _repo = new CalendarRepository();
-            _currentMonth = DateTime.Today;
             monthGridLayout = monthGrid.GetComponent<GridLayoutGroup>();
         }
 
@@ -44,32 +48,67 @@ namespace LocalCalendar.Calendar
             RefreshMonth();
         }
 
-        public void PrevMonth()
+        // --- Orientation-change handling ---
+
+        void Update()
         {
-            _currentMonth = _currentMonth.AddMonths(-1);
-            RefreshMonth();
+            CheckScreenSize();
         }
 
-        public void NextMonth()
+        private void CheckScreenSize()
         {
-            _currentMonth = _currentMonth.AddMonths(1);
-            RefreshMonth();
-        }
-
-        public void Today() {
-            _currentMonth = DateTime.Today;
-            RefreshMonth();
-        }
+            // Check if dimensions have changed since last frame
+            if (Math.Abs(Screen.width - _lastWidth) > 0.1f || Math.Abs(Screen.height - _lastHeight) > 0.1f)
+            {
+                _lastWidth = Screen.width;
+                _lastHeight = Screen.height;
         
+                // Trigger the redraw logic
+                HandleUpdateLayout();
+            }
+        }
+
+        private void HandleUpdateLayout()
+        {
+            if (gameObject.activeInHierarchy)
+            {
+                StopAllCoroutines();
+                StartCoroutine(UpdateLayout());
+            }
+        }
+
+        private IEnumerator UpdateLayout()
+        {
+            // Frame 1: Wait for OS/Unity to acknowledge new resolution
+            yield return null; 
+
+            // Frame 2: Disable layout and force Canvas update
+            monthGridLayout.enabled = false;
+            Canvas.ForceUpdateCanvases();
+            yield return null;
+
+            // Frame 3: Apply new math
+            Vector2 newSize = CalendarUtils.ResizeGrid(monthGridLayout, monthGrid);
+            monthGridLayout.cellSize = newSize;
+
+            // If the cells have an AspectRatioFitter or similar, 
+            // we need to update the header after the cells resize
+            weekdayHeader.Build(newSize.x);
+
+            // Final Pass: Re-enable and rebuild
+            monthGridLayout.enabled = true;
+            LayoutRebuilder.ForceRebuildLayoutImmediate(monthGrid);
+        }
+
+        
+        // --- Calendar building ---
+
         private void RefreshMonth()
         {
             ClearGrid();
+            HandleUpdateLayout();
 
-            // Make sure we have the proper width before resizing
-            Canvas.ForceUpdateCanvases();
-            monthGridLayout.cellSize = CalendarUtils.ResizeGrid(monthGridLayout, monthGrid);
-            weekdayHeader.Build(monthGridLayout.cellSize.x);
-
+            DateTime _currentMonth = DateContext.CurrentShownMonth;
             monthLabel.text = _currentMonth.ToString("MMMM yyyy");
 
             DateTime firstDay = new DateTime(_currentMonth.Year,
@@ -96,14 +135,46 @@ namespace LocalCalendar.Calendar
                     OnItemClicked);
             }
 
-            Canvas.ForceUpdateCanvases();
-            LayoutRebuilder.ForceRebuildLayoutImmediate(monthGrid);
+            //Canvas.ForceUpdateCanvases();
+            //LayoutRebuilder.ForceRebuildLayoutImmediate(monthGrid);
         }
 
         private void ClearGrid()
         {
             foreach (Transform child in monthGrid)
                 Destroy(child.gameObject);
+        }
+
+
+        // --- Click handlers ---
+
+        public void OpenSideMenu()
+        {
+            sideMenuPopover.gameObject.SetActive(true);
+        }
+
+        public void PrevMonth()
+        {
+            DateContext.PrevMonth();
+            RefreshMonth();
+        }
+
+        public void NextMonth()
+        {
+            DateContext.NextMonth();
+            RefreshMonth();
+        }
+
+        public void Today() {
+            DateContext.Today();
+            RefreshMonth();
+        }
+
+        public void Add()
+        {
+            // To open create/edit scene
+            EditItemContext.SelectedDate = DateTime.Today;
+            SceneManager.LoadScene("EditItemScene");
         }
 
         public void OnDayClicked(DateTime date)
@@ -114,19 +185,6 @@ namespace LocalCalendar.Calendar
         private void OnItemClicked((CalendarItem item, DateTime shownOnDate) args)
         {
             OnDayClicked(args.shownOnDate);
-        }
-
-        public void OpenSchedule()
-        {
-            // Pass the currently displayed calendar month
-            ScheduleContext.InitialMonth =
-                new DateTime(_currentMonth.Year, _currentMonth.Month, 1);
-            SceneManager.LoadScene("ScheduleScene");
-        }
-
-        public void OpenSettings()
-        {
-            SceneManager.LoadScene("SettingsScene");
         }
     }
 }

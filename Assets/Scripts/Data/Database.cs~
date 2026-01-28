@@ -112,11 +112,6 @@ namespace LocalCalendar.Data
 
         // --- Import/export functions ---
 
-        internal static void NotifyImportResult(ImportResult result)
-        {
-            OnImportFinished?.Invoke(result);
-        }
-
         public static bool ExportDB()
         {
             bool status = true;

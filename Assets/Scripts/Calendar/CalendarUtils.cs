@@ -112,6 +112,7 @@ namespace LocalCalendar.Calendar
                 .ToList();
         }
 
+        // GetOccurrenceEnd
         public static DateTime GetOccurrenceEnd(CalendarItem item, DateTime occurrenceStart)
         {
             if (item.EndUtc > item.StartUtc)
@@ -125,6 +126,7 @@ namespace LocalCalendar.Calendar
             }
         }
 
+        // ResizeGrid
         public static Vector2 ResizeGrid(GridLayoutGroup grid, RectTransform monthGrid)
         {
             int rows = Mathf.CeilToInt(DAYS_IN_GRID / (float)GRID_COLUMNS); // 6

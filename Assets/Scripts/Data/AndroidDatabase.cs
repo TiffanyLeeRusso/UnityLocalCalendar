@@ -8,7 +8,9 @@ namespace LocalCalendar.Data
 {
     public static class AndroidDatabase
     {
-        public static void ExportDB()
+        // --- Export DB ---
+
+        public static bool ExportDB()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
             // --- prepare export file ---
@@ -51,15 +53,19 @@ namespace LocalCalendar.Data
             catch (Exception e)
             {
                 LoggingService.Error(LogCategory.DB, "DB export failed: " + e);
-                return;
+                return false;
             }
             finally
             {
                 Database.Open();
             }
 #endif
+            return true;
         }
 
+        
+        // --- ImportDB ---
+        
         public static void ImportDB()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -143,6 +149,7 @@ namespace LocalCalendar.Data
                     catch (IOException ioEx)
                     {
                         LoggingService.Error(LogCategory.DB, "File Swap failed (Lock Issue): " + ioEx.Message);
+                        Database.NotifyImportResult(ImportResult.Error);
                         return;
                     }
 
@@ -150,10 +157,12 @@ namespace LocalCalendar.Data
                     Database.Open();
                     Database.Initialize();
                     LoggingService.Info(LogCategory.DB, "Import successful!");
+                    Database.NotifyImportResult(ImportResult.Success);
                 }
                 else
                 {
                     LoggingService.Error(LogCategory.DB, "Invalid file: Header mismatch.");
+                    Database.NotifyImportResult(ImportResult.InvalidFile);
                 }
             }
             catch (Exception e)
