@@ -15,8 +15,12 @@ namespace LocalCalendar.Settings
 {
     public class SettingsController : MonoBehaviour
     {
+        [SerializeField] private SidePanelPopover sideMenuPopover;
+        [SerializeField] private TMP_Text versionText;
         [SerializeField] private TMP_Text permissionsList;
-        [SerializeField] public CanvasGroup permissionsGroup; // for the fade effect to show something happened
+        [SerializeField] private CanvasGroup permissionsGroup; // for the fade effect to show something happened
+        [SerializeField] private CanvasGroup importExportStatusGroup; // for the fade effect to show something happened
+        [SerializeField] private TMP_Text importExportStatusText;
         [SerializeField] private Toggle darkToggle;
         [SerializeField] private Toggle bigTextToggle;
 
@@ -31,10 +35,27 @@ namespace LocalCalendar.Settings
         void Start()
         {
             dbPathText.text = Application.persistentDataPath;
+            importExportStatusText.text = "";
+            versionText.text = $"Version {Application.version}";
 
             LoadPermissions();
             LoadTheme();
             LoadTextMode();
+        }
+
+        private void OnEnable()
+        {
+            Database.OnImportFinished += HandleImportFinished;
+        }
+
+        private void OnDisable()
+        {
+            Database.OnImportFinished -= HandleImportFinished;
+        }
+
+        public void OpenSideMenu()
+        {
+            sideMenuPopover.gameObject.SetActive(true);
         }
 
         public void LoadPermissions()
@@ -50,11 +71,6 @@ namespace LocalCalendar.Settings
             yield return AppUtils.Fade(permissionsGroup, 0f, 1f, 0.25f);
         }
 
-        public void OpenCalendar()
-        {
-            SceneManager.LoadScene("CalendarScene");
-        }
-
         public void RegrantPermissions()
         {
             PopupService.ShowPermissionsPopup();
@@ -62,12 +78,34 @@ namespace LocalCalendar.Settings
 
         public void ExportDB()
         {
-            Database.ExportDB();
+            bool status = Database.ExportDB();
+            SetImportExportStatus("Export", status);
         }
 
         public void ImportDB()
         {
             Database.ImportDB();
+        }
+
+        private void HandleImportFinished(ImportResult result)
+        {
+            switch (result)
+            {
+                case ImportResult.Success:
+                    SetImportExportStatus("Import", true);
+                    break;
+                case ImportResult.InvalidFile:
+                case ImportResult.Error:
+                default:
+                    SetImportExportStatus("Import", false);
+                    break;
+            }
+        }
+
+        private void SetImportExportStatus(string funcType, bool status)
+        {
+            string text = $"{funcType} " + (status ? "succeeded" : "failed") + ". See logs for details.";
+            importExportStatusText.text = TMPUtils.ColorStatus(status, text, text);
         }
 
         public void CancelAllNotifications()

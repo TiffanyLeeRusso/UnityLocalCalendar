@@ -18,17 +18,14 @@ namespace LocalCalendar.Schedule
         [SerializeField] private ScheduleDayHeader dayHeaderPrefab;
         [SerializeField] private DayEventRow itemRowPrefab;
         [SerializeField] private RectTransform paddingPrefab;
+        [SerializeField] private SidePanelPopover sideMenuPopover;
 
         private CalendarRepository _repo;
-        private DateTime _currentMonth;
+        //private DateTime _currentMonth;
 
         void Start()
         {
             _repo = new CalendarRepository();
-            _currentMonth = ScheduleContext.InitialMonth ??
-                new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
-
-            ScheduleContext.Clear();
             BuildSchedule();
         }
 
@@ -43,13 +40,13 @@ namespace LocalCalendar.Schedule
 
         public void PrevMonth()
         {
-            _currentMonth = _currentMonth.AddMonths(-1);
+            DateContext.PrevMonth();
             BuildSchedule();
         }
 
         public void NextMonth()
         {
-            _currentMonth = _currentMonth.AddMonths(1);
+            DateContext.NextMonth();
             BuildSchedule();
         }
 
@@ -57,6 +54,7 @@ namespace LocalCalendar.Schedule
         {
             Clear();
 
+            DateTime _currentMonth = DateContext.CurrentShownMonth;
             monthLabel.text = _currentMonth.ToString("MMMM yyyy");
 
             DateTime rangeStart = _currentMonth;
@@ -98,9 +96,9 @@ namespace LocalCalendar.Schedule
             SceneManager.LoadScene("EditItemScene");
         }
 
-        public void Back()
+        public void OpenSideMenu()
         {
-            SceneManager.LoadScene("CalendarScene");
+            sideMenuPopover.gameObject.SetActive(true);
         }
     }
 }
