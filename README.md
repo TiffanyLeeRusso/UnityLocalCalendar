@@ -116,11 +116,11 @@ Expansion always happens at query time, not at storage time.
 ### Possible Future Improvements / Known Issues
 * The text-input cursor still doesn't show up on Android.
 * Time zone switching.
+* Additional settings like big-text mode and themes
 * Search-event functionality.
 * UX niceties like multi-day bars in month grid, event colors, day and/or event emojis or stickers.
 * Investigate the font-displacement and kerning issues.
 * Use the DatePicker (with a clear button) for repetition end in EditItem scene.
 * Setting to start week on Sun or Mon.
-* Keeping track of previous screen instead of defaulting back to the Calendar scene in today's month.
-* Implement the phone's back button.
-* Add UX for import success and failure.
+
+
