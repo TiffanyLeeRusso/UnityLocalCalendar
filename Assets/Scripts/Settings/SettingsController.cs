@@ -13,7 +13,7 @@ using LocalCalendar.Permissions;
 
 namespace LocalCalendar.Settings
 {
-    public class SettingsController : MonoBehaviour
+    public class SettingsController : MonoBehaviour, IBackHandler
     {
         [SerializeField] private SidePanelPopover sideMenuPopover;
         [SerializeField] private TMP_Text versionText;
@@ -38,6 +38,8 @@ namespace LocalCalendar.Settings
             importExportStatusText.text = "";
             versionText.text = $"Version {Application.version}";
 
+            SceneHistoryManager.Instance.RegisterHandler(this);
+
             LoadPermissions();
             LoadTheme();
             LoadTextMode();
@@ -50,6 +52,9 @@ namespace LocalCalendar.Settings
 
         private void OnDisable()
         {
+            if (SceneHistoryManager.Exists)
+                SceneHistoryManager.Instance.UnregisterHandler(this);
+
             Database.OnImportFinished -= HandleImportFinished;
         }
 
@@ -69,6 +74,21 @@ namespace LocalCalendar.Settings
             yield return new WaitForSeconds(0.5f);
             permissionsList.text = PermissionsUtils.GetPermissionsListAsString();
             yield return AppUtils.Fade(permissionsGroup, 0f, 1f, 0.25f);
+        }
+
+        public bool OnBackButtonPressed()
+        {
+            if (debugPopup.activeSelf)
+            {
+                debugPopup.SetActive(false);
+                return true;
+            }
+            else if (sideMenuPopover.gameObject.activeSelf)
+            {
+                sideMenuPopover.gameObject.SetActive(false);
+                return true;
+            }
+            return false; // Let the manager switch scenes
         }
 
         public void RegrantPermissions()

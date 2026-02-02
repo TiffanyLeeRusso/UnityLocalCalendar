@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using LocalCalendar.Data;
 using LocalCalendar.Calendar;
 using LocalCalendar.Services;
@@ -11,7 +10,7 @@ using LocalCalendar.EditItem;
 
 namespace LocalCalendar.Schedule
 {
-    public class ScheduleController : MonoBehaviour
+    public class ScheduleController : MonoBehaviour, IBackHandler
     {
         [SerializeField] private TMP_Text monthLabel;
         [SerializeField] private Transform content;
@@ -20,22 +19,26 @@ namespace LocalCalendar.Schedule
         [SerializeField] private RectTransform paddingPrefab;
         [SerializeField] private SidePanelPopover sideMenuPopover;
 
-        private CalendarRepository _repo;
-        //private DateTime _currentMonth;
-
-        void Start()
-        {
-            _repo = new CalendarRepository();
-            BuildSchedule();
-        }
-
         void OnEnable()
         {
+
             if (CalendarRefreshSignal.NeedsRefresh)
             {
                 CalendarRefreshSignal.NeedsRefresh = false;
                 BuildSchedule();
             }
+        }
+
+        void OnDisable()
+        {
+            if (SceneHistoryManager.Exists)
+                SceneHistoryManager.Instance.UnregisterHandler(this);
+        }
+
+        void Start()
+        {
+            SceneHistoryManager.Instance.RegisterHandler(this);
+            BuildSchedule();
         }
 
         public void PrevMonth()
@@ -60,7 +63,7 @@ namespace LocalCalendar.Schedule
             DateTime rangeStart = _currentMonth;
             DateTime rangeEnd = _currentMonth.AddMonths(1).AddDays(-1);
 
-            var grouped = CalendarUtils.GetExpandedMonthItems(_repo, rangeStart, rangeEnd);
+            var grouped = CalendarUtils.GetExpandedMonthItems(new CalendarRepository(), rangeStart, rangeEnd);
             foreach (var groupItem in grouped)
             {
                 var header = Instantiate(dayHeaderPrefab, content);
@@ -80,7 +83,7 @@ namespace LocalCalendar.Schedule
         private void OnItemClicked((CalendarItem item, DateTime shownOnDate) args)
         {
             EditItemContext.EditingItemId = args.item.Id;
-            SceneManager.LoadScene("EditItemScene");
+            SceneHistoryManager.Instance.LoadScene(AppScene.EditItem);
         }
 
         private void Clear()
@@ -89,11 +92,21 @@ namespace LocalCalendar.Schedule
                 Destroy(child.gameObject);
         }
 
+        public bool OnBackButtonPressed()
+        {
+            if (sideMenuPopover.gameObject.activeSelf)
+            {
+                sideMenuPopover.gameObject.SetActive(false);
+                return true;
+            }
+            return false; // Let the manager switch scenes
+        }
+        
         public void Add()
         {
             // To open create/edit scene
             EditItemContext.SelectedDate = DateTime.Today;
-            SceneManager.LoadScene("EditItemScene");
+            SceneHistoryManager.Instance.LoadScene(AppScene.EditItem);
         }
 
         public void OpenSideMenu()

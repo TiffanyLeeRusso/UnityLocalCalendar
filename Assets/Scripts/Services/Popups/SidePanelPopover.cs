@@ -7,20 +7,17 @@ namespace LocalCalendar.Services
     {
         public void OpenCalendar()
         {
-            SceneManager.LoadScene("CalendarScene");
+            SceneHistoryManager.Instance.LoadScene(AppScene.Calendar);
         }
 
         public void OpenSchedule()
         {
-            // Pass the currently displayed calendar month
-            //ScheduleContext.InitialMonth =
-            //    new DateTime(_currentMonth.Year, _currentMonth.Month, 1);
-            SceneManager.LoadScene("ScheduleScene");
+            SceneHistoryManager.Instance.LoadScene(AppScene.Schedule);
         }
 
         public void OpenSettings()
         {
-            SceneManager.LoadScene("SettingsScene");
+            SceneHistoryManager.Instance.LoadScene(AppScene.Settings);
         }
 
         public void Close()
