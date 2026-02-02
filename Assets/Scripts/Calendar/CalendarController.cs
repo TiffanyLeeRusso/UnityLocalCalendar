@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement;
 using LocalCalendar.Data;
 using LocalCalendar.App;
 using LocalCalendar.Services;
@@ -13,7 +12,7 @@ using LocalCalendar.Schedule;
 
 namespace LocalCalendar.Calendar
 {
-    public class CalendarController : MonoBehaviour
+    public class CalendarController : MonoBehaviour, IBackHandler
     {
         [SerializeField] private TMP_Text monthLabel;
         [SerializeField] private RectTransform monthGrid;
@@ -22,7 +21,6 @@ namespace LocalCalendar.Calendar
         [SerializeField] private DayEventsPopup dayEventsPopup;
         [SerializeField] private SidePanelPopover sideMenuPopover;
 
-        private CalendarRepository _repo;
         private GridLayoutGroup monthGridLayout;
         // Keep track of screen size for orientation changes
         private float _lastWidth;
@@ -30,7 +28,6 @@ namespace LocalCalendar.Calendar
 
         void Awake()
         {
-            _repo = new CalendarRepository();
             monthGridLayout = monthGrid.GetComponent<GridLayoutGroup>();
         }
 
@@ -43,10 +40,18 @@ namespace LocalCalendar.Calendar
             }
         }
 
+        void OnDisable()
+        {
+            if (SceneHistoryManager.Exists)
+                SceneHistoryManager.Instance.UnregisterHandler(this);
+        }
+
         void Start()
         {
+            SceneHistoryManager.Instance.RegisterHandler(this);
             RefreshMonth();
         }
+
 
         // --- Orientation-change handling ---
 
@@ -124,7 +129,7 @@ namespace LocalCalendar.Calendar
                 bool isCurrentMonth = date.Month == _currentMonth.Month;
 
                 bool isToday = date.Date == DateTime.Today;
-                var dayItems = CalendarUtils.GetExpandedDayItems(_repo, date);
+                var dayItems = CalendarUtils.GetExpandedDayItems(new CalendarRepository(), date);
                 var cell = Instantiate(dayCellPrefab, monthGrid);
                 cell.Initialize(
                     date,
@@ -148,6 +153,21 @@ namespace LocalCalendar.Calendar
 
         // --- Click handlers ---
 
+        public bool OnBackButtonPressed()
+        {
+            if (dayEventsPopup.gameObject.activeSelf)
+            {
+                dayEventsPopup.gameObject.SetActive(false);
+                return true;
+            }
+            else if (sideMenuPopover.gameObject.activeSelf)
+            {
+                sideMenuPopover.gameObject.SetActive(false);
+                return true;
+            }
+            return false; // Let the manager switch scenes
+        }
+        
         public void OpenSideMenu()
         {
             sideMenuPopover.gameObject.SetActive(true);
@@ -174,7 +194,7 @@ namespace LocalCalendar.Calendar
         {
             // To open create/edit scene
             EditItemContext.SelectedDate = DateTime.Today;
-            SceneManager.LoadScene("EditItemScene");
+            SceneHistoryManager.Instance.LoadScene(AppScene.EditItem);
         }
 
         public void OnDayClicked(DateTime date)

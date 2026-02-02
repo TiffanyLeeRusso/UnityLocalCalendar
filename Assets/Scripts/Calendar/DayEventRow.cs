@@ -66,7 +66,7 @@ namespace LocalCalendar.Calendar
 
             repeatIcon.SetActive(_item.RepeatRule != null);
             repeatLabel.text = item.RepeatRule != null
-                ? CalendarUtils.RepeatRuleToReadableText(item.RepeatRule)
+                ? DataFormatter.ToString(item.RepeatRule)
                 : "";
             repeatLabel.gameObject.SetActive(item.RepeatRule != null);
 

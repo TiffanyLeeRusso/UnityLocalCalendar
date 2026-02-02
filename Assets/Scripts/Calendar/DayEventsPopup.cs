@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using LocalCalendar.Data;
 using LocalCalendar.EditItem;
+using LocalCalendar.Services;
 
 namespace LocalCalendar.Calendar
 {
@@ -62,15 +62,14 @@ namespace LocalCalendar.Calendar
         {
             // To open create/edit scene
             EditItemContext.SelectedDate = _currentDate;
-            SceneManager.LoadScene("EditItemScene");
+            SceneHistoryManager.Instance.LoadScene(AppScene.EditItem);
         }
 
         private void OnItemClicked((CalendarItem item, DateTime shownOnDate) args)
         {
             EditItemContext.EditingItemId = args.item.Id;
             EditItemContext.SelectedDate = null;
-
-            SceneManager.LoadScene("EditItemScene");
+            SceneHistoryManager.Instance.LoadScene(AppScene.EditItem);
         }
         
         public void Hide()

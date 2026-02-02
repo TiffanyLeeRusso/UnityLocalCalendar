@@ -23,7 +23,7 @@ namespace LocalCalendar.Data
 
         public bool AllDay;
 
-        public RepeatRule RepeatRule;
         public ReminderSettings Reminder;
+        public RepeatRule RepeatRule;
     }
 }

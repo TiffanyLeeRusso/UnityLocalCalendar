@@ -112,6 +112,7 @@ namespace LocalCalendar.App
             if (_handlingIntent) return;
 
             _handlingIntent = true;
+            //AndroidNotificationCenter.ClearNotificationIntentData();
 
             var itemId = data.Replace("open:item:", "");
             LoggingService.Info(LogCategory.App,
@@ -125,8 +126,12 @@ namespace LocalCalendar.App
         {
             yield return null;
 
-            EditItemContext.EditingItemId = itemId;
-            SceneManager.LoadScene("EditItemScene");
+            if (!string.IsNullOrEmpty(itemId))
+            {
+                EditItemContext.EditingItemId = itemId;
+                EditItemContext.Mode = EditItemMode.Preview;
+                SceneHistoryManager.Instance.LoadScene(AppScene.EditItem);
+            }
 
 #if UNITY_ANDROID && !UNITY_EDITOR
             _handlingIntent = false;

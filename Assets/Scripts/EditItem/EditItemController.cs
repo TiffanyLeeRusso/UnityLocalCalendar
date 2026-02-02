@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement;
 using TMPro;
 using LocalCalendar.Data;
 using LocalCalendar.Notifications;
@@ -12,27 +11,37 @@ namespace LocalCalendar.EditItem
 {
     public class EditItemController : MonoBehaviour
     {
-        public TMP_InputField titleInput;
-        public TMP_InputField noteInput;
+        [SerializeField] private TMP_InputField titleInput;
+        [SerializeField] private GameObject titleDecoration;
+        [SerializeField] private TMP_InputField noteInput;
+        [SerializeField] private GameObject noteDecoration;
 
+        [SerializeField] private Toggle allDayToggle;
+        [SerializeField] private GameObject nowBtn;
+        [SerializeField] private TMP_Text startDateText;
         [SerializeField] private DatePicker startDatePicker;
+        [SerializeField] private TMP_Text endDateText;
         [SerializeField] private DatePicker endDatePicker;
-        [SerializeField] private TMP_Text startDateLabel;
-        [SerializeField] private TMP_Text endDateLabel;
+
+        [SerializeField] private TMP_Text timeText;
         [SerializeField] private GameObject timePickerContainer;
         [SerializeField] private TimePicker startTimePicker;
         [SerializeField] private TimePicker endTimePicker;
-        [SerializeField] private Toggle allDayToggle;
-        [SerializeField] private Toggle repeatToggle;
+
+        [SerializeField] private TMP_Text reminderText;
         [SerializeField] private Toggle reminderToggle;
+        [SerializeField] private GameObject reminderContainer;
+        [SerializeField] private TMP_Dropdown reminderDropdown;
+
+        [SerializeField] private TMP_Text repeatText;
+        [SerializeField] private Toggle repeatToggle;
         [SerializeField] private TMP_Dropdown repeatUnitDropdown;
         [SerializeField] private TMP_InputField repeatIntervalInput;
         [SerializeField] private TMP_InputField repeatUntilInput;
         [SerializeField] private GameObject repeatContainer;
 
-        public GameObject reminderRow;
-        public TMP_Dropdown reminderDropdown;
-
+        [SerializeField] private GameObject editBtns;
+        [SerializeField] private GameObject previewBtns;
         [SerializeField] private GameObject deleteButton;
 
         private CalendarRepository _repo;
@@ -41,6 +50,14 @@ namespace LocalCalendar.EditItem
         private TimeSpan _lastDuration = TimeSpan.FromHours(1);
         private DateTime _startDate;
         private DateTime _endDate;
+
+        static readonly TimeSpan[] ReminderOffsets =
+        {
+            TimeSpan.Zero,
+            TimeSpan.FromMinutes(10),
+            TimeSpan.FromHours(1),
+            TimeSpan.FromDays(1)
+        };
 
         void Start()
         {
@@ -52,36 +69,27 @@ namespace LocalCalendar.EditItem
             startDatePicker.OnDateChanged += OnStartDateChanged;
             endDatePicker.OnDateChanged += OnEndDateChanged;
             allDayToggle.onValueChanged.AddListener(OnAllDayChanged);
-            allDayToggle.onValueChanged.AddListener(_ => RefreshVisibility());
-            reminderToggle.onValueChanged.AddListener(_ => RefreshVisibility());
-            repeatToggle.onValueChanged.AddListener(_ => RefreshVisibility());
+            reminderToggle.onValueChanged.AddListener(_ => reminderDropdown.gameObject.SetActive(reminderToggle.isOn));
+            repeatToggle.onValueChanged.AddListener(_ => repeatContainer.SetActive(repeatToggle.isOn));
 
+            // Add vs edit
             bool isEditing = !string.IsNullOrEmpty(EditItemContext.EditingItemId);
             deleteButton.SetActive(isEditing);
 
             PopulateReminderDropdown();
             PopulateRepeatDropdown();
-            RefreshVisibility();
             LoadContext();
         }
 
-        void RefreshVisibility()
+        void OnDestroy()
         {
-            bool reminder = reminderToggle.isOn;
-            bool repetitive = repeatToggle.isOn;
-            bool allDay = allDayToggle.isOn;
-
-            endTimePicker.gameObject.SetActive(!allDay);
-            startTimePicker.gameObject.SetActive(!allDay);
-
-            reminderRow.SetActive(reminder);
-            repeatContainer.SetActive(repetitive);
+            EditItemContext.Clear();
         }
 
-        private void RefreshDateLabels()
+        private void RefreshDateText()
         {
-            startDateLabel.text = _startDate.ToString("yyyy-MM-dd");
-            endDateLabel.text = _endDate.ToString("yyyy-MM-dd");
+            startDateText.text = _startDate.ToString("yyyy-MM-dd");
+            endDateText.text = _endDate.ToString("yyyy-MM-dd");
         }
 
         private void OnStartDateChanged(DateTime newStartDate)
@@ -93,7 +101,7 @@ namespace LocalCalendar.EditItem
               _endDate = _startDate;
 
             endDatePicker.SetDate(_endDate);
-            RefreshDateLabels();
+            RefreshDateText();
         }
 
         private void OnEndDateChanged(DateTime newEndDate)
@@ -105,7 +113,7 @@ namespace LocalCalendar.EditItem
               _endDate = _startDate;
 
             endDatePicker.SetDate(_endDate);
-            RefreshDateLabels();
+            RefreshDateText();
         }
 
         private void OnStartTimeChanged(DateTime newStart)
@@ -122,7 +130,7 @@ namespace LocalCalendar.EditItem
             }
 
             endTimePicker.SetTime(newEnd);
-            RefreshDateLabels();
+            RefreshDateText();
 
             _suppressTimeEvents = false;
         }
@@ -158,6 +166,7 @@ namespace LocalCalendar.EditItem
         {
             if (isAllDay)
             {
+                timePickerContainer.SetActive(true);
                 // Normalize to all-day boundaries
                 // Note the date part does not matter since this is just a *time* picker.
                 startTimePicker.SetTime(
@@ -165,6 +174,8 @@ namespace LocalCalendar.EditItem
                 endTimePicker.SetTime(
                     new DateTime(1, 1, 1, 0, 0, 0));
             }
+            else
+                timePickerContainer.SetActive(false);
         }
 
         void PopulateRepeatDropdown()
@@ -255,7 +266,7 @@ namespace LocalCalendar.EditItem
             startTimePicker.SetTime(start);
             endTimePicker.SetTime(end);
 
-            RefreshDateLabels();
+            RefreshDateText();
 
             _suppressTimeEvents = false;
         }
@@ -268,9 +279,8 @@ namespace LocalCalendar.EditItem
                 _repo.Save(item);
                 NotificationScheduler.Schedule(item);
 
-                EditItemContext.Clear();
                 CalendarRefreshSignal.NeedsRefresh = true;
-                SceneManager.LoadScene("CalendarScene");
+                SceneHistoryManager.Instance.GoBack();
             }
             catch (Exception ex)
             {
@@ -281,8 +291,7 @@ namespace LocalCalendar.EditItem
 
         public void OnCancelPressed()
         {
-            EditItemContext.Clear();
-            SceneManager.LoadScene("CalendarScene");
+            SceneHistoryManager.Instance.GoBack();
         }
 
         public void DeleteItem()
@@ -292,10 +301,15 @@ namespace LocalCalendar.EditItem
 
             NotificationScheduler.Cancel(_item);
             _repo.Delete(EditItemContext.EditingItemId);
-            EditItemContext.Clear();
 
             CalendarRefreshSignal.NeedsRefresh = true;
-            SceneManager.LoadScene("CalendarScene");
+            SceneHistoryManager.Instance.GoBack();
+        }
+
+        public void OnEditPressed()
+        {
+            EditItemContext.EditingItemId = _item.Id;
+            SceneHistoryManager.Instance.LoadScene(AppScene.EditItem);
         }
 
         void BuildUIFromItem()
@@ -303,44 +317,128 @@ namespace LocalCalendar.EditItem
             // Title & Note
             titleInput.text = _item.Title;
             noteInput.text = _item.Note;
-
-            // Date
-            var startLocal = _item.StartUtc.ToLocalTime();
-            var endLocal = _item.EndUtc.ToLocalTime();
-            startDatePicker.SetDate(_startDate);
-            endDatePicker.SetDate(_endDate);
-            RefreshDateLabels();
-            _lastDuration = endLocal - startLocal;
-
-            // All Day
-            allDayToggle.isOn = _item.AllDay;
-            timePickerContainer.SetActive(!_item.AllDay);
-
-            if (!_item.AllDay)
+            if (EditItemContext.Mode == EditItemMode.Preview)
             {
-                startTimePicker.SetTime(startLocal);
-                endTimePicker.SetTime(endLocal);
-            }
-
-            // Reminder
-            reminderToggle.isOn = _item.Type == CalendarItemType.Reminder;
-
-            // Repeat
-            if (_item.RepeatRule != null)
-            {
-                repeatToggle.isOn = true;
-                repeatIntervalInput.text = (_item.RepeatRule.Interval).ToString();
-                repeatUnitDropdown.value = (int)_item.RepeatRule.Unit;
-
-                repeatUntilInput.text = _item.RepeatRule.UntilUtc.HasValue
-                    ? _item.RepeatRule.UntilUtc.Value.ToLocalTime()
-                    .ToString("yyyy-MM-dd")
-                    : "";
+                titleInput.readOnly = true;
+                noteInput.readOnly = true;
+                titleDecoration.SetActive(false);
+                noteDecoration.SetActive(false);
+                titleInput.gameObject.SetActive(titleInput.text.Length > 0);
+                noteInput.gameObject.SetActive(noteInput.text.Length > 0);
             }
             else
             {
-                repeatToggle.isOn = false;
+                titleInput.readOnly = false;
+                noteInput.readOnly = false;
+                titleDecoration.SetActive(true);
+                noteDecoration.SetActive(true);
+                titleInput.gameObject.SetActive(true);
+                noteInput.gameObject.SetActive(true);
             }
+
+            // All Day/Date/time
+            RefreshDateText();
+            bool allDay = _item.AllDay;
+            var startLocal = _item.StartUtc.ToLocalTime();
+            var endLocal = _item.EndUtc.ToLocalTime();
+            if (EditItemContext.Mode == EditItemMode.Edit)
+            {
+                // All day & time
+                allDayToggle.isOn = allDay;
+                allDayToggle.gameObject.SetActive(true);
+                timePickerContainer.SetActive(!allDay);
+                timeText.gameObject.SetActive(false);
+                if (!allDay)
+                {
+                    startTimePicker.SetTime(startLocal);
+                    endTimePicker.SetTime(endLocal);
+                }
+
+                // Date
+                startDatePicker.SetDate(_startDate);
+                endDatePicker.SetDate(_endDate);
+                _lastDuration = endLocal - startLocal;
+            }
+            else // preview mode
+            {
+                allDayToggle.gameObject.SetActive(false);
+                timePickerContainer.SetActive(false);
+                timeText.gameObject.SetActive(true);
+                timeText.text = allDay ? "All day" : $"{startLocal:hh:mm tt} – {endLocal:hh:mm tt}";
+            }
+
+            nowBtn.SetActive(EditItemContext.Mode == EditItemMode.Edit);
+            startDatePicker.gameObject.SetActive(EditItemContext.Mode == EditItemMode.Edit);
+            endDatePicker.gameObject.SetActive(EditItemContext.Mode == EditItemMode.Edit);
+
+            // Reminder
+            bool isReminder = _item.Reminder != null;
+            if (EditItemContext.Mode == EditItemMode.Edit)
+            {
+                // Set the reminder toggle.
+                // It is always visible in add/edit mode
+                reminderToggle.isOn = isReminder;
+                reminderToggle.gameObject.SetActive(true);
+                // The reminder options are visible only when the toggle is checked.
+                reminderContainer.gameObject.SetActive(isReminder);
+                if (isReminder)
+                {
+                    reminderDropdown.value = Array.IndexOf(ReminderOffsets, _item.Reminder.Offset);
+                    if (reminderDropdown.value < 0)
+                        reminderDropdown.value = 0;
+
+                    reminderDropdown.RefreshShownValue();
+                }
+            }
+            else
+            {
+                // Preview mode
+                reminderToggle.gameObject.SetActive(false);
+                reminderContainer.SetActive(false);
+                if(isReminder)
+                {
+                    reminderText.gameObject.SetActive(true);
+                    reminderText.text = DataFormatter.ToString(_item.Reminder);
+                }
+                else
+                    reminderText.gameObject.SetActive(false);
+            }
+            
+            // Repeat
+            bool repeats = _item.RepeatRule != null;
+            if (EditItemContext.Mode == EditItemMode.Edit)
+            {
+                repeatToggle.gameObject.SetActive(true);
+                repeatText.gameObject.SetActive(false);
+                if (repeats)
+                {
+                    repeatContainer.SetActive(true);
+                    repeatToggle.isOn = true;
+                    repeatIntervalInput.text = (_item.RepeatRule.Interval).ToString();
+                    repeatUnitDropdown.value = (int)_item.RepeatRule.Unit;
+
+                    repeatUntilInput.text = _item.RepeatRule.UntilUtc.HasValue
+                        ? _item.RepeatRule.UntilUtc.Value.ToLocalTime().ToString("yyyy-MM-dd")
+                        : "";
+                }
+                else
+                {
+                    repeatToggle.isOn = false;
+                    repeatContainer.SetActive(false);
+                }
+            }
+            else
+            {
+                // Preview mode. Just print the text.
+                repeatToggle.gameObject.SetActive(false);
+                repeatContainer.SetActive(false);
+                repeatText.gameObject.SetActive(repeats);
+                repeatText.text = repeats ? DataFormatter.ToString(_item.RepeatRule) : "";
+            }
+
+            // Buttons
+            previewBtns.SetActive(EditItemContext.Mode == EditItemMode.Preview);
+            editBtns.SetActive(EditItemContext.Mode == EditItemMode.Edit);
         }
 
         CalendarItem BuildItemFromUI()
@@ -383,23 +481,11 @@ namespace LocalCalendar.EditItem
             {
                 item.Reminder = new ReminderSettings
                 {
-                    Offset = GetReminderOffset()
+                    Offset = ReminderOffsets[reminderDropdown.value]
                 };
             }
 
             return item;
-        }
-
-        TimeSpan GetReminderOffset()
-        {
-            return reminderDropdown.value switch
-            {
-                0 => TimeSpan.Zero,
-                1 => TimeSpan.FromMinutes(-10),
-                2 => TimeSpan.FromHours(-1),
-                3 => TimeSpan.FromDays(-1),
-                _ => TimeSpan.Zero
-            };
         }
 
         RepeatRule BuildRepeatRule()
