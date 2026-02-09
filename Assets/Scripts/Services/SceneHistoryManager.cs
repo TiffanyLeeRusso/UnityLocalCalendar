@@ -8,6 +8,7 @@ namespace LocalCalendar.Services
     {
         None,
         Calendar,
+        Agenda,
         EditItem,
         Schedule,
         Settings
@@ -145,6 +146,7 @@ namespace LocalCalendar.Services
             return scene switch
             {
                 AppScene.Calendar => "CalendarScene",
+                    AppScene.Agenda => "AgendaScene",
                     AppScene.EditItem => "EditItemScene",
                     AppScene.Schedule => "ScheduleScene",
                     AppScene.Settings => "SettingsScene",
@@ -157,6 +159,7 @@ namespace LocalCalendar.Services
             return sceneName switch
             {
                 "CalendarScene" => AppScene.Calendar,
+                    "AgendaScene" => AppScene.Agenda,
                     "EditItemScene" => AppScene.EditItem,
                     "ScheduleScene" => AppScene.Schedule,
                     "SettingsScene" => AppScene.Settings,

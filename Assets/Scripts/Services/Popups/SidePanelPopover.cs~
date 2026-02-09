@@ -10,11 +10,6 @@ namespace LocalCalendar.Services
             SceneHistoryManager.Instance.LoadScene(AppScene.Calendar);
         }
 
-        public void OpenAgenda()
-        {
-            SceneHistoryManager.Instance.LoadScene(AppScene.Agenda);
-        }
-
         public void OpenSchedule()
         {
             SceneHistoryManager.Instance.LoadScene(AppScene.Schedule);

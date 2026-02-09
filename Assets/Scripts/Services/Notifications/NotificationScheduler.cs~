@@ -39,29 +39,6 @@ namespace LocalCalendar.Notifications
             return ReminderTiming.Future;
         }
 
-        // SyncNotifications
-        // Schedule, reschedule, cancel now-stale notifs
-        public static void SyncNotifications(CalendarItem oldItem, CalendarItem newItem)
-        {
-            bool hadReminder = oldItem != null &&
-            oldItem.Type == CalendarItemType.Reminder &&
-            oldItem.Reminder != null;
-
-            bool hasReminder = newItem.Type == CalendarItemType.Reminder &&
-            newItem.Reminder != null;
-
-            // Removed reminder
-            if (hadReminder && !hasReminder)
-            {
-                NotificationScheduler.Cancel(oldItem);
-                return;
-            }
-
-            // Added or changed reminder
-            if (hasReminder)
-                Schedule(newItem);
-        }
-
         public static void Schedule(CalendarItem item)
         {
             if (item.Type != CalendarItemType.Reminder || item.Reminder == null)
