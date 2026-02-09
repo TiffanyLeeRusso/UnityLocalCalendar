@@ -16,5 +16,15 @@ namespace LocalCalendar.Data
         public int Interval;
         public RepeatUnit Unit;
         public DateTime? UntilUtc;
+
+        public RepeatRule Clone()
+        {
+            return new RepeatRule
+            {
+                Interval = Interval,
+                Unit = Unit,
+                UntilUtc = UntilUtc
+            };
+        }
     }
 }

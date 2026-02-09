@@ -25,5 +25,21 @@ namespace LocalCalendar.Data
 
         public ReminderSettings Reminder;
         public RepeatRule RepeatRule;
+
+        public CalendarItem Clone()
+        {
+            return new CalendarItem
+            {
+                Id = Id,
+                Type = Type,
+                Title = Title,
+                Note = Note,
+                StartUtc = StartUtc,
+                EndUtc = EndUtc,
+                AllDay = AllDay,
+                Reminder = Reminder?.Clone(),
+                RepeatRule = RepeatRule?.Clone()
+            };
+        }
     }
 }

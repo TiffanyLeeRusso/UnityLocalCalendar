@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using LocalCalendar.Data;
-using LocalCalendar.Calendar;
 using UnityEngine;
 
 namespace LocalCalendar.Data
