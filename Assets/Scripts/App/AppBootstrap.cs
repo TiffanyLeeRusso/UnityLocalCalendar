@@ -7,7 +7,6 @@ using LocalCalendar.Data;
 using LocalCalendar.Notifications;
 using LocalCalendar.Services;
 using LocalCalendar.AppDebug;
-using LocalCalendar.EditItem;
 
 namespace LocalCalendar.App
 {
@@ -16,7 +15,7 @@ namespace LocalCalendar.App
         private static bool _initialized = false;
         private static DateTime _lastKnownDate;
 #if UNITY_ANDROID && !UNITY_EDITOR
-        private static bool _handlingIntent = false;
+        private static int _lastHandledIntentId = -1;
 #endif
 
         void Awake()
@@ -102,17 +101,16 @@ namespace LocalCalendar.App
 #if UNITY_ANDROID && !UNITY_EDITOR
             var intent = AndroidNotificationCenter.GetLastNotificationIntent();
 
-            if (intent == null)
-                return;
+            if (intent == null) return;
 
             var data = intent.Notification.IntentData;
-
             if (string.IsNullOrEmpty(data)) return;
             if (!data.StartsWith("open:item:")) return;
-            if (_handlingIntent) return;
 
-            _handlingIntent = true;
-            //AndroidNotificationCenter.ClearNotificationIntentData();
+            // Ignore repeats
+            var id = intent.Id;
+            if (id == _lastHandledIntentId) return;
+            _lastHandledIntentId = id;
 
             var itemId = data.Replace("open:item:", "");
             LoggingService.Info(LogCategory.App,
@@ -132,10 +130,6 @@ namespace LocalCalendar.App
                 EditItemContext.Mode = EditItemMode.Preview;
                 SceneHistoryManager.Instance.LoadScene(AppScene.EditItem);
             }
-
-#if UNITY_ANDROID && !UNITY_EDITOR
-            _handlingIntent = false;
-#endif
         }
 
         
