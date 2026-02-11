@@ -21,8 +21,6 @@ namespace LocalCalendar.Controllers
         [SerializeField] private CanvasGroup permissionsGroup; // for the fade effect to show something happened
         [SerializeField] private CanvasGroup importExportStatusGroup; // for the fade effect to show something happened
         [SerializeField] private TMP_Text importExportStatusText;
-        [SerializeField] private Toggle darkToggle;
-        [SerializeField] private Toggle bigTextToggle;
 
         [SerializeField] private TMP_InputField dbPathText;
         [SerializeField] private GameObject debugPopup;
@@ -41,8 +39,6 @@ namespace LocalCalendar.Controllers
             SceneHistoryManager.Instance.RegisterHandler(this);
 
             LoadPermissions();
-            LoadTheme();
-            LoadTextMode();
         }
 
         private void OnEnable()
@@ -136,30 +132,6 @@ namespace LocalCalendar.Controllers
         public void CopyDbPath()
         {
             GUIUtility.systemCopyBuffer = Application.persistentDataPath;
-        }
-
-        void LoadTheme()
-        {
-            string theme = SettingsService.GetTheme();
-            darkToggle.isOn = theme == "dark";
-        }
-
-        public void SetTheme(bool on)
-        {
-            if (on) SettingsService.SetTheme("dark");
-            else SettingsService.SetTheme("light");
-        }
-
-        void LoadTextMode()
-        {
-            string mode = SettingsService.GetTextMode();
-            bigTextToggle.isOn = mode == "big";
-        }
-
-        public void SetTextMode(bool on)
-        {
-            if (on) SettingsService.SetTextMode("big");
-            else SettingsService.SetTextMode("normal");
         }
         
         // ---------- DEBUG ----------

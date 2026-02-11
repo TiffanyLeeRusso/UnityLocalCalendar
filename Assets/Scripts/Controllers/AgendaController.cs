@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using LocalCalendar.Data;
 using LocalCalendar.Services;
@@ -9,6 +10,17 @@ using LocalCalendar.Prefabs;
 
 namespace LocalCalendar.Controllers
 {
+    class LayoutItem
+    {
+        public CalendarItem item;
+        public DateTime start;
+        public DateTime end;
+        public AgendaItemView view;
+
+        public int column;
+        public int columnCount;
+    }
+
     public class AgendaController : MonoBehaviour
     {
         [Header("UI")]
@@ -20,6 +32,9 @@ namespace LocalCalendar.Controllers
         [SerializeField] RectTransform timeGrid;
         [SerializeField] RectTransform itemsLayer;
         [SerializeField] RectTransform nowIndicator;
+        [SerializeField] TMP_Text nowTimeLabel;
+        [SerializeField] RectTransform nowArrow;
+        [SerializeField] RectTransform nowLine;
 
         [Header("Prefabs")]
         [SerializeField] RectTransform hourRowPrefab;
@@ -28,8 +43,21 @@ namespace LocalCalendar.Controllers
         private readonly List<GameObject> _spawned = new();
         private CalendarRepository _repo;
         private DateTime _visibleDate;
+        private float _nextUpdate;
+        private List<LayoutItem> _layoutItems;
 
-        const float HourHeight = 200f;
+        const float HourHeight = 250f;
+
+        void OnEnable()
+        {
+            LayoutWatcher.Instance.OnRelayout += HandleRelayout;
+        }
+
+        void OnDisable()
+        {
+            if (LayoutWatcher.Instance != null)
+                LayoutWatcher.Instance.OnRelayout -= HandleRelayout;
+        }
 
         void Start()
         {
@@ -46,7 +74,17 @@ namespace LocalCalendar.Controllers
 
         void Update()
         {
-            UpdateNowIndicator();
+            if (Time.time >= _nextUpdate)
+            {
+                _nextUpdate = Time.time + 30f;
+                UpdateNowIndicator();
+            }
+        }
+
+        void HandleRelayout()
+        {
+            StopAllCoroutines();
+            StartCoroutine(RelayoutRoutine());
         }
 
         void ChangeDay(int delta)
@@ -55,24 +93,7 @@ namespace LocalCalendar.Controllers
             Refresh();
         }
 
-        void Refresh()
-        {
-            ClearItems();
-
-            header.title.text = _visibleDate.ToString("dddd, MMM d");
-            header.currentDate = _visibleDate;
-
-            var items = CalendarUtils.GetExpandedDayItems(_repo, _visibleDate);
-
-            foreach (var (item, start) in items)
-            {
-                CreateItem(item, start);
-            }
-
-            UpdateNowIndicator();
-        }
-
-        void BuildHours()
+        private void BuildHours()
         {
             for (int i = 0; i < 24; i++)
             {
@@ -89,33 +110,7 @@ namespace LocalCalendar.Controllers
             );
         }
 
-        void CreateItem(CalendarItem item, DateTime startLocal)
-        {
-            var view = Instantiate(agendaItemPrefab, itemsLayer);
-            _spawned.Add(view.gameObject);
-
-            var start = startLocal;
-            var end = CalendarUtils.GetOccurrenceEnd(item, start);
-
-            if (end.Date > _visibleDate)
-                end = _visibleDate.AddDays(1);
-
-            float yStart = (float)start.TimeOfDay.TotalHours * HourHeight;
-            float yEnd = (float)end.TimeOfDay.TotalHours * HourHeight;
-
-            float height = Mathf.Max(30, yEnd - yStart);
-
-            var rt = view.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0, 1);
-            rt.anchorMax = new Vector2(1, 1);
-            rt.pivot = new Vector2(0.5f, 1);
-            rt.offsetMin = new Vector2(100, -yStart - height);
-            rt.offsetMax = new Vector2(-20, -yStart);
-
-            view.Bind(item, OnItemTapped);
-        }
-
-        void OnItemTapped(CalendarItem item)
+        private void OnItemTapped(CalendarItem item)
         {
             EditItemContext.EditingItemId = item.Id;
             UnityEngine.SceneManagement.SceneManager.LoadScene("EditItemScene");
@@ -131,22 +126,244 @@ namespace LocalCalendar.Controllers
 
             nowIndicator.gameObject.SetActive(true);
 
-            float y = (float)DateTime.Now.TimeOfDay.TotalHours * HourHeight;
+            var now = DateTime.Now;
+
+            nowTimeLabel.text = now.ToString("h:mm tt");
+
+            float y = (float)now.TimeOfDay.TotalHours * HourHeight;
 
             var rt = nowIndicator;
             rt.anchorMin = new Vector2(0, 1);
             rt.anchorMax = new Vector2(1, 1);
-            rt.pivot = new Vector2(0.5f, 1);
-            rt.offsetMin = new Vector2(0, -y - 2);
-            rt.offsetMax = new Vector2(0, -y + 2);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+
+            float height = rt.sizeDelta.y;
+
+            rt.offsetMin = new Vector2(0, -y - height * 0.5f);
+            rt.offsetMax = new Vector2(0, -y + height * 0.5f);
         }
 
-        void ClearItems()
+        private void ClearItems()
         {
             foreach (var go in _spawned)
                 Destroy(go);
 
             _spawned.Clear();
+        }
+
+        // --- Item-layout stuff ---
+
+        IEnumerator RelayoutRoutine()
+        {
+            itemsLayer.gameObject.SetActive(false);
+
+            yield return null;
+            Canvas.ForceUpdateCanvases();
+            yield return null;
+
+            LayoutItems(_layoutItems);
+            UpdateNowIndicator();
+
+            itemsLayer.gameObject.SetActive(true);
+        }
+
+        private void Refresh()
+        {
+            StopAllCoroutines();
+            StartCoroutine(RefreshRoutine());
+        }
+
+        private IEnumerator RefreshRoutine()
+        {
+            ClearItems();
+
+            header.title.text = _visibleDate.ToString("dddd, MMM d");
+            header.currentDate = _visibleDate;
+
+            // Hide layer to avoid flash
+            itemsLayer.gameObject.SetActive(false);
+
+            // Wait for layout system
+            yield return null;
+            Canvas.ForceUpdateCanvases();
+            yield return null;
+
+            var items = CalendarUtils.GetExpandedDayItems(_repo, _visibleDate);
+
+            _layoutItems = new List<LayoutItem>();
+
+            foreach (var (item, start) in items)
+            {
+                var view = Instantiate(agendaItemPrefab, itemsLayer);
+                _spawned.Add(view.gameObject);
+
+                var end = CalendarUtils.GetOccurrenceEnd(item, start);
+                if (end.Date > _visibleDate)
+                    end = _visibleDate.AddDays(1);
+
+                view.Bind(item, OnItemTapped);
+
+                _layoutItems.Add(new LayoutItem
+                {
+                    item = item,
+                    start = start,
+                    end = end,
+                    view = view
+                });
+            }
+
+            LayoutItems(_layoutItems);
+            UpdateNowIndicator();
+
+            // Show after positioned
+            itemsLayer.gameObject.SetActive(true);
+        }
+
+        private void LayoutItems(List<LayoutItem> items)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(itemsLayer);
+
+            var ungrouped = new List<LayoutItem>(items);
+
+            while (ungrouped.Count > 0)
+            {
+                var seed = ungrouped[0];
+                ungrouped.RemoveAt(0);
+
+                var group = new List<LayoutItem> { seed };
+
+                bool added;
+                do
+                {
+                    added = false;
+
+                    for (int i = ungrouped.Count - 1; i >= 0; i--)
+                    {
+                        var test = ungrouped[i];
+
+                        foreach (var g in group)
+                        {
+                            if (Overlaps(test, g))
+                            {
+                                group.Add(test);
+                                ungrouped.RemoveAt(i);
+                                added = true;
+                                break;
+                            }
+                        }
+                    }
+
+                } while (added);
+
+                LayoutGroup(group);
+            }
+        }
+
+        void ApplyLayout(LayoutItem item, int col, int colCount)
+        {
+            float yStart = (float)item.start.TimeOfDay.TotalHours * HourHeight;
+            float yEnd   = (float)item.end.TimeOfDay.TotalHours   * HourHeight;
+
+            float height = Mathf.Max(30, yEnd - yStart);
+
+            var rt = item.view.GetComponent<RectTransform>();
+
+            // --- lock transform mode ---
+            rt.anchorMin = new Vector2(0, 1);
+            rt.anchorMax = new Vector2(0, 1);
+            rt.pivot     = new Vector2(0, 1);
+
+            float leftPadding  = 120f;
+            float rightPadding = 20f;
+            float spacing      = 4f;
+
+            float layerWidth = itemsLayer.rect.width;
+
+            // safety guard
+            if (layerWidth <= 0)
+                return;
+
+            float totalWidth = layerWidth - leftPadding - rightPadding;
+            totalWidth = Mathf.Max(10, totalWidth);
+
+            colCount = Mathf.Max(1, colCount);
+
+            float colWidth = (totalWidth - spacing * (colCount - 1)) / colCount;
+            colWidth = Mathf.Max(20, colWidth);
+
+            float x = leftPadding + col * (colWidth + spacing);
+
+            rt.anchoredPosition = new Vector2(x, -yStart);
+            rt.sizeDelta        = new Vector2(colWidth, height);
+        }
+
+        void LayoutGroup(List<LayoutItem> group)
+        {
+            // Sort by start time for stable layout
+            group.Sort((a, b) => a.start.CompareTo(b.start));
+
+            foreach (var item in group)
+            {
+                // 1) Build local overlap set for THIS item
+                var local = new List<LayoutItem>();
+
+                foreach (var other in group)
+                {
+                    if (Overlaps(item, other))
+                        local.Add(other);
+                }
+
+                // Sort local overlaps by start time
+                local.Sort((a, b) => a.start.CompareTo(b.start));
+
+                // 2) Pack local overlaps into columns
+                var columns = new List<List<LayoutItem>>();
+
+                foreach (var l in local)
+                {
+                    bool placed = false;
+
+                    for (int c = 0; c < columns.Count; c++)
+                    {
+                        var last = columns[c][columns[c].Count - 1];
+
+                        if (last.end <= l.start)
+                        {
+                            columns[c].Add(l);
+                            placed = true;
+                            break;
+                        }
+                    }
+
+                    if (!placed)
+                    {
+                        columns.Add(new List<LayoutItem> { l });
+                    }
+                }
+
+                int colCount = columns.Count;
+
+                // 3) Find THIS item's local column
+                int myCol = 0;
+
+                for (int c = 0; c < columns.Count; c++)
+                {
+                    if (columns[c].Contains(item))
+                    {
+                        myCol = c;
+                        break;
+                    }
+                }
+
+                // 4) Apply layout using local column info
+                ApplyLayout(item, myCol, colCount);
+            }
+        }
+
+
+        private bool Overlaps(LayoutItem a, LayoutItem b)
+        {
+            return a.start < b.end && b.start < a.end;
         }
     }
 }

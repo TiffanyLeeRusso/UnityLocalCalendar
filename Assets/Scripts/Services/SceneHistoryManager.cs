@@ -46,6 +46,7 @@ namespace LocalCalendar.Services
                 return _instance;
             }
         }
+
         private static SceneHistoryManager _instance;
 
         public AppScene PreviousScene { get; private set; } = AppScene.None;
@@ -94,6 +95,7 @@ namespace LocalCalendar.Services
             _activeHandler = null;
 
             AppScene loadedScene = GetEnumFromSceneName(scene.name);
+
             // Don't update if we "loaded" the same scene (e.g. a refresh)
             if (loadedScene == CurrentScene) return;
 
@@ -146,12 +148,12 @@ namespace LocalCalendar.Services
             return scene switch
             {
                 AppScene.Calendar => "CalendarScene",
-                    AppScene.Agenda => "AgendaScene",
-                    AppScene.EditItem => "EditItemScene",
-                    AppScene.Schedule => "ScheduleScene",
-                    AppScene.Settings => "SettingsScene",
-                    _ => "CalendarScene" // Default fallback
-                    };
+                AppScene.Agenda => "AgendaScene",
+                AppScene.EditItem => "EditItemScene",
+                AppScene.Schedule => "ScheduleScene",
+                AppScene.Settings => "SettingsScene",
+                _ => "CalendarScene" // Default fallback
+            };
         }
 
         private AppScene GetEnumFromSceneName(string sceneName)
@@ -159,12 +161,12 @@ namespace LocalCalendar.Services
             return sceneName switch
             {
                 "CalendarScene" => AppScene.Calendar,
-                    "AgendaScene" => AppScene.Agenda,
-                    "EditItemScene" => AppScene.EditItem,
-                    "ScheduleScene" => AppScene.Schedule,
-                    "SettingsScene" => AppScene.Settings,
-                    _ => AppScene.None
-                    };
+                "AgendaScene" => AppScene.Agenda,
+                "EditItemScene" => AppScene.EditItem,
+                "ScheduleScene" => AppScene.Schedule,
+                "SettingsScene" => AppScene.Settings,
+                _ => AppScene.Calendar // Default fallback
+            };
         }
     }
 }

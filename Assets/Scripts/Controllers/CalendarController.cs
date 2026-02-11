@@ -13,6 +13,8 @@ namespace LocalCalendar.Controllers
 {
     public class CalendarController : MonoBehaviour, IBackHandler
     {
+        [SerializeField] private RectTransform rootCanvas;
+        [SerializeField] private CanvasGroup mainCanvasGroup;
         [SerializeField] private Header header;
         [SerializeField] private RectTransform monthGrid;
         [SerializeField] private WeekdayHeaderRow weekdayHeader;
@@ -21,17 +23,23 @@ namespace LocalCalendar.Controllers
         [SerializeField] private SidePanelPopover sideMenuPopover;
 
         private GridLayoutGroup monthGridLayout;
-        // Keep track of screen size for orientation changes
-        private float _lastWidth;
-        private float _lastHeight;
+        private LayoutElement gridLayoutElement;
+        private bool _isRelayouting = false;
 
         void Awake()
         {
             monthGridLayout = monthGrid.GetComponent<GridLayoutGroup>();
+            gridLayoutElement = monthGrid.GetComponent<LayoutElement>();
+
+            // Ensure we have a LayoutElement for the shrinking-for-orientation-change code
+            if (gridLayoutElement == null) 
+                gridLayoutElement = monthGrid.gameObject.AddComponent<LayoutElement>();
         }
 
         void OnEnable()
         {
+            LayoutWatcher.Instance.OnRelayout += HandleRelayout;
+
             if (CalendarRefreshSignal.NeedsRefresh)
             {
                 CalendarRefreshSignal.NeedsRefresh = false;
@@ -43,6 +51,9 @@ namespace LocalCalendar.Controllers
         {
             if (SceneHistoryManager.Exists)
                 SceneHistoryManager.Instance.UnregisterHandler(this);
+
+            if (LayoutWatcher.Instance != null)
+                LayoutWatcher.Instance.OnRelayout -= HandleRelayout;
         }
 
         void Start()
@@ -58,67 +69,89 @@ namespace LocalCalendar.Controllers
             RefreshMonth();
         }
 
+        // --- Layout handling ---
 
-        // --- Orientation-change handling ---
-
-        void Update()
+        private void HandleRelayout()
         {
-            CheckScreenSize();
+            if (_isRelayouting) return;
+            StopAllCoroutines();
+            StartCoroutine(HandleRelayoutRoutine());
         }
 
-        private void CheckScreenSize()
+        private IEnumerator HandleRelayoutRoutine()
         {
-            // Check if dimensions have changed since last frame
-            if (Math.Abs(Screen.width - _lastWidth) > 0.1f || Math.Abs(Screen.height - _lastHeight) > 0.1f)
-            {
-                _lastWidth = Screen.width;
-                _lastHeight = Screen.height;
-        
-                // Trigger the redraw logic
-                HandleUpdateLayout();
-            }
-        }
+            _isRelayouting = true;
 
-        private void HandleUpdateLayout()
-        {
-            if (gameObject.activeInHierarchy)
-            {
-                StopAllCoroutines();
-                StartCoroutine(UpdateLayout());
-            }
-        }
+            // Hide everything during calculation or else the grid
+            // collapse will show up as a flash of tiny grid.
+            // We cannot use gameObject.SetActive(false) because
+            // the layout engine stops calculating it entirely
+            // and ResizeGrid math will return 0 because the RectTransform
+            // doesn't exist while disabled.
+            if (mainCanvasGroup != null) mainCanvasGroup.alpha = 0;
 
-        private IEnumerator UpdateLayout()
-        {
-            // Frame 1: Wait for OS/Unity to acknowledge new resolution
-            yield return null; 
-
-            // Frame 2: Disable layout and force Canvas update
+            // Collapse the grid so it stops pushing the parent VLG boundaries
             monthGridLayout.enabled = false;
-            Canvas.ForceUpdateCanvases();
-            yield return null;
+            gridLayoutElement.preferredWidth = 0;
+            gridLayoutElement.preferredHeight = 0;
 
-            // Frame 3: Apply new math
+            // Wait for the parent (MainContent) to shrink to the new screen size
+            yield return null; // Wait 1 frame
+            Canvas.ForceUpdateCanvases();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(rootCanvas);
+
+            UpdateGridSizing();
+            /*
+            // Now that the MonthGrid RectTransform has been shrunk by the VLG 
+            // we calculate the cellSize based on that new, smaller Rect.
             Vector2 newSize = CalendarUtils.ResizeGrid(monthGridLayout, monthGrid);
             monthGridLayout.cellSize = newSize;
+            weekdayHeader.Build(newSize.x);
+            */
+            //monthGridLayout.enabled = true;
+            //LayoutRebuilder.ForceRebuildLayoutImmediate(monthGrid);
 
-            // If the cells have an AspectRatioFitter or similar, 
-            // we need to update the header after the cells resize
+            // Show the UI
+            if (mainCanvasGroup != null) mainCanvasGroup.alpha = 1;
+            _isRelayouting = false;
+        }
+
+        private void UpdateGridSizing()
+        {
+            // Simple sizing logic that doesn't use Coroutines/Alpha
+            Vector2 newSize = CalendarUtils.ResizeGrid(monthGridLayout, monthGrid);
+            monthGridLayout.cellSize = newSize;
             weekdayHeader.Build(newSize.x);
 
-            // Final Pass: Re-enable and rebuild
             monthGridLayout.enabled = true;
+            LayoutRebuilder.ForceRebuildLayoutImmediate(monthGrid);
+        
+            // Reset preferred size so it doesn't stay at 0
+            gridLayoutElement.preferredWidth = -1;
+            gridLayoutElement.preferredHeight = -1;
+
             LayoutRebuilder.ForceRebuildLayoutImmediate(monthGrid);
         }
 
-        
         // --- Calendar building ---
 
-        private void RefreshMonth()
+        private void RefreshMonth(bool fullLayoutCalc = true)
         {
             ClearGrid();
-            HandleUpdateLayout();
+            BuildGridCells();
 
+            if(fullLayoutCalc)
+            {
+                HandleRelayout();
+            }
+            else
+            {
+                UpdateGridSizing();
+            }
+        }
+
+        private void BuildGridCells()
+        {
             DateTime _currentMonth = DateContext.CurrentShownMonth;
             DateTime firstDay = new DateTime(_currentMonth.Year,
                                              _currentMonth.Month,
@@ -172,18 +205,18 @@ namespace LocalCalendar.Controllers
         public void PrevMonth()
         {
             DateContext.PrevMonth();
-            RefreshMonth();
+            RefreshMonth(false);
         }
 
         public void NextMonth()
         {
             DateContext.NextMonth();
-            RefreshMonth();
+            RefreshMonth(false);
         }
 
         public void Today() {
             DateContext.Today();
-            RefreshMonth();
+            RefreshMonth(false);
         }
 
         public void OnDayClicked(DateTime date)
