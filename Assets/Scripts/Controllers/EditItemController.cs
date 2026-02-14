@@ -37,7 +37,9 @@ namespace LocalCalendar.Controllers
         [SerializeField] private Toggle repeatToggle;
         [SerializeField] private TMP_Dropdown repeatUnitDropdown;
         [SerializeField] private TMP_InputField repeatIntervalInput;
-        [SerializeField] private TMP_InputField repeatUntilInput;
+        [SerializeField] private Toggle repeatForeverToggle;
+        [SerializeField] private DatePicker repeatUntilDatePicker;
+        [SerializeField] private TMP_Text repeatUntilLabel;
         [SerializeField] private GameObject repeatContainer;
 
         [SerializeField] private GameObject editBtns;
@@ -65,13 +67,22 @@ namespace LocalCalendar.Controllers
             _repo = new CalendarRepository();
 
             // Change events
-            startTimePicker.OnTimeChanged += OnStartTimeChanged;
-            endTimePicker.OnTimeChanged += OnEndTimeChanged;
             startDatePicker.OnDateChanged += OnStartDateChanged;
             endDatePicker.OnDateChanged += OnEndDateChanged;
+
             allDayToggle.onValueChanged.AddListener(OnAllDayChanged);
+            startTimePicker.OnTimeChanged += OnStartTimeChanged;
+            endTimePicker.OnTimeChanged += OnEndTimeChanged;
+
             reminderToggle.onValueChanged.AddListener(_ => reminderContainer.gameObject.SetActive(reminderToggle.isOn));
-            repeatToggle.onValueChanged.AddListener(_ => repeatContainer.SetActive(repeatToggle.isOn));
+
+            repeatToggle.onValueChanged.AddListener(_ =>
+            {
+                repeatContainer.SetActive(repeatToggle.isOn);
+                UpdateRepeatUntilLabel();
+            });
+            repeatForeverToggle.onValueChanged.AddListener(OnRepeatForeverChanged);
+            repeatUntilDatePicker.OnDateChanged += OnRepeatUntilChanged;
 
             Init();
         }
@@ -94,8 +105,8 @@ namespace LocalCalendar.Controllers
         
         private void RefreshDateText()
         {
-            startDateText.text = _startDate.ToString("yyyy-MM-dd");
-            endDateText.text = _endDate.ToString("yyyy-MM-dd");
+            startDateText.text = AppUtils.FormatDate(_startDate);
+            endDateText.text = AppUtils.FormatDate(_endDate);
         }
 
         private void OnStartDateChanged(DateTime newStartDate)
@@ -107,7 +118,9 @@ namespace LocalCalendar.Controllers
               _endDate = _startDate;
 
             endDatePicker.SetDate(_endDate);
+            ClampRepeatUntil();
             RefreshDateText();
+            UpdateRepeatUntilLabel();
         }
 
         private void OnEndDateChanged(DateTime newEndDate)
@@ -170,7 +183,7 @@ namespace LocalCalendar.Controllers
 
         private void OnAllDayChanged(bool isAllDay)
         {
-            if (isAllDay)
+            if (!isAllDay)
             {
                 timePickerContainer.SetActive(true);
                 // Normalize to all-day boundaries
@@ -184,6 +197,54 @@ namespace LocalCalendar.Controllers
                 timePickerContainer.SetActive(false);
         }
 
+        private void OnRepeatForeverChanged(bool isForever)
+        {
+            repeatUntilDatePicker.gameObject.SetActive(!isForever);
+
+            if (!isForever)
+                ClampRepeatUntil();
+
+            UpdateRepeatUntilLabel();
+            LayoutWatcher.Instance?.ForceRelayout();
+        }
+
+        private void OnRepeatUntilChanged(DateTime date)
+        {
+            ClampRepeatUntil();
+            UpdateRepeatUntilLabel();
+        }
+
+        private void ClampRepeatUntil()
+        {
+            DateTime min = _startDate.AddDays(1);
+
+            DateTime current = repeatUntilDatePicker.GetDate();
+
+            if (current <= min)
+                repeatUntilDatePicker.SetDate(min);
+        }
+
+        private void UpdateRepeatUntilLabel()
+        {
+            if (!repeatToggle.isOn)
+            {
+                repeatUntilLabel.gameObject.SetActive(false);
+                return;
+            }
+
+            repeatUntilLabel.gameObject.SetActive(true);
+
+            if (repeatForeverToggle.isOn)
+            {
+                repeatUntilLabel.text = "Forever";
+            }
+            else
+            {
+                DateTime date = repeatUntilDatePicker.GetDate().Date;
+                repeatUntilLabel.text = AppUtils.FormatDate(date);
+            }
+        }
+        
         void PopulateRepeatDropdown()
         {
             repeatUnitDropdown.ClearOptions();
@@ -221,7 +282,7 @@ namespace LocalCalendar.Controllers
                 _startDate = startLocal.Date;
                 _endDate = endLocal.Date;
                 _lastDuration = endLocal - startLocal;
-
+                
                 BuildUIFromItem();
             }
             else
@@ -345,10 +406,10 @@ namespace LocalCalendar.Controllers
             }
 
             // All Day/Date/time
-            RefreshDateText();
             bool allDay = _item.AllDay;
             var startLocal = _item.StartUtc.ToLocalTime();
             var endLocal = _item.EndUtc.ToLocalTime();
+            RefreshDateText();
             if (EditItemContext.Mode == EditItemMode.Edit)
             {
                 // All day & time
@@ -425,14 +486,30 @@ namespace LocalCalendar.Controllers
                     repeatIntervalInput.text = (_item.RepeatRule.Interval).ToString();
                     repeatUnitDropdown.value = (int)_item.RepeatRule.Unit;
 
-                    repeatUntilInput.text = _item.RepeatRule.UntilUtc.HasValue
-                        ? _item.RepeatRule.UntilUtc.Value.ToLocalTime().ToString("yyyy-MM-dd")
-                        : "";
+                    // Repeat until
+                    bool isForever = !_item.RepeatRule.UntilUtc.HasValue;
+                    repeatForeverToggle.isOn = isForever;
+                    repeatUntilDatePicker.gameObject.SetActive(!isForever);
+
+                    if (!isForever)
+                    {
+                        var untilLocal = _item.RepeatRule.UntilUtc.Value.ToLocalTime().Date;
+                        repeatUntilDatePicker.SetDate(untilLocal);
+                    }
+                    else
+                    {
+                        repeatUntilDatePicker.SetDate(_startDate.AddDays(1));
+                    }
+
+                    ClampRepeatUntil();
+                    UpdateRepeatUntilLabel();
                 }
                 else
                 {
                     repeatToggle.isOn = false;
                     repeatContainer.SetActive(false);
+                    repeatForeverToggle.isOn = true;
+                    repeatUntilDatePicker.gameObject.SetActive(false);
                 }
             }
             else
@@ -502,8 +579,11 @@ namespace LocalCalendar.Controllers
                 return null;
 
             DateTime? until = null;
-            if (!string.IsNullOrEmpty(repeatUntilInput.text))
-                until = DateTime.Parse(repeatUntilInput.text).ToUniversalTime();
+            if (!repeatForeverToggle.isOn)
+            {
+                DateTime local = repeatUntilDatePicker.GetDate().Date;
+                until = local.ToUniversalTime();
+            }
 
             return new RepeatRule
             {

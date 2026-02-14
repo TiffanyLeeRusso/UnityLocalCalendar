@@ -20,7 +20,6 @@ namespace LocalCalendar.Controllers
 
         void OnEnable()
         {
-
             if (CalendarRefreshSignal.NeedsRefresh)
             {
                 CalendarRefreshSignal.NeedsRefresh = false;

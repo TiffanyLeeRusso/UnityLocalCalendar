@@ -37,6 +37,7 @@ namespace LocalCalendar.Prefabs
             _onClick = onClick;
             _shownOnDate = shownOnDate;
 
+            // TODO: Merge this with AppUtils.FormatDate(CalendarItem)
             DateTime occurrenceEnd = CalendarUtils.GetOccurrenceEnd(item, occurrenceStart);
             bool isSingleDay = occurrenceStart.Date == occurrenceEnd.Date;
             bool isFirstDay = shownOnDate.Date == occurrenceStart.Date;
@@ -48,9 +49,14 @@ namespace LocalCalendar.Prefabs
                  (occurrenceEnd - occurrenceStart).TotalHours >= 23))
                 timeText = "All day";
             else if (isSingleDay)
+            {
+                string start = AppUtils.FormatTime(occurrenceStart);
+                string end   = AppUtils.FormatTime(occurrenceEnd);
+
                 timeText = mode == ViewMode.Compact
-                    ? $"{occurrenceStart:hh:mm tt}\n – \n{occurrenceEnd:hh:mm tt}"
-                    : $"{occurrenceStart:hh:mm tt} – {occurrenceEnd:hh:mm tt}";
+                    ? $"{start}\n – \n{end}"
+                    : $"{start} – {end}";
+            }
             else
             {
                 if (isFirstDay)

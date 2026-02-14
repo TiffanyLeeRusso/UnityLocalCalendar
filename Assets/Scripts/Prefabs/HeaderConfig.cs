@@ -3,11 +3,11 @@ using System;
 
 namespace LocalCalendar.Prefabs
 {
+    // To prevent overwrite/timing issues, these items should all be static.
+    // Anything dynamic can be set directly on the instanced header obj.
     public class HeaderConfig
     {
-        public string Title;
-        public string SceneTitle;
-        public DateTime CurrentDate;
+        public string SceneTitle = "";
         public SidePanelPopover SideMenuPopover;
         public bool ShowSidePanel = true;
         public bool ShowBack = false;

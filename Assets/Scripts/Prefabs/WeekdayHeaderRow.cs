@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
+using LocalCalendar.Services;
 
 namespace LocalCalendar.Prefabs
 {
@@ -17,9 +18,9 @@ namespace LocalCalendar.Prefabs
             var culture = System.Globalization.CultureInfo.CurrentCulture;
             var names = culture.DateTimeFormat.AbbreviatedDayNames;
 
-            // Start Monday instead of Sunday if you want:
-            //int start = (int)DayOfWeek.Monday;
-            int start = (int)DayOfWeek.Sunday;
+            int start = SettingsService.GetWeekStartMonday()
+                ? (int)DayOfWeek.Monday
+                : (int)DayOfWeek.Sunday;
 
             for (int i = 0; i < 7; i++)
             {

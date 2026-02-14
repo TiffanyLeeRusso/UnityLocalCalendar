@@ -5,7 +5,6 @@ using UnityEngine.SceneManagement;
 using System;
 using System.Collections;
 using System.IO;
-using LocalCalendar.App;
 using LocalCalendar.Services;
 using LocalCalendar.Data;
 using LocalCalendar.Notifications;
@@ -19,6 +18,8 @@ namespace LocalCalendar.Controllers
         [SerializeField] private TMP_Text versionText;
         [SerializeField] private TMP_Text permissionsList;
         [SerializeField] private CanvasGroup permissionsGroup; // for the fade effect to show something happened
+        [SerializeField] private Toggle twentyFourHrToggle;
+        [SerializeField] private Toggle monWeekStartToggle;
         [SerializeField] private CanvasGroup importExportStatusGroup; // for the fade effect to show something happened
         [SerializeField] private TMP_Text importExportStatusText;
 
@@ -39,6 +40,7 @@ namespace LocalCalendar.Controllers
             SceneHistoryManager.Instance.RegisterHandler(this);
 
             LoadPermissions();
+            LoadViewSettings();
         }
 
         private void OnEnable()
@@ -52,24 +54,6 @@ namespace LocalCalendar.Controllers
                 SceneHistoryManager.Instance.UnregisterHandler(this);
 
             Database.OnImportFinished -= HandleImportFinished;
-        }
-
-        public void OpenSideMenu()
-        {
-            sideMenuPopover.gameObject.SetActive(true);
-        }
-
-        public void LoadPermissions()
-        {
-            StartCoroutine(LoadPermissionsRoutine());
-        }
-
-        IEnumerator LoadPermissionsRoutine()
-        {
-            yield return AppUtils.Fade(permissionsGroup, 1f, 0f, 0.25f);
-            yield return new WaitForSeconds(0.5f);
-            permissionsList.text = PermissionsUtils.GetPermissionsListAsString();
-            yield return AppUtils.Fade(permissionsGroup, 0f, 1f, 0.25f);
         }
 
         public bool OnBackButtonPressed()
@@ -87,10 +71,63 @@ namespace LocalCalendar.Controllers
             return false; // Let the manager switch scenes
         }
 
+        public void OpenSideMenu()
+        {
+            sideMenuPopover.gameObject.SetActive(true);
+        }
+        
+        // --- Permissions ---
+
+        public void LoadPermissions()
+        {
+            StartCoroutine(LoadPermissionsRoutine());
+        }
+
+        IEnumerator LoadPermissionsRoutine()
+        {
+            yield return AppUtils.Fade(permissionsGroup, 1f, 0f, 0.25f);
+            yield return new WaitForSeconds(0.5f);
+            permissionsList.text = PermissionsUtils.GetPermissionsListAsString();
+            yield return AppUtils.Fade(permissionsGroup, 0f, 1f, 0.25f);
+        }
+       
         public void RegrantPermissions()
         {
             PopupService.ShowPermissionsPopup();
         }
+
+        // --- View Settings ---
+
+        private void LoadViewSettings()
+        {
+            // --- Load values ---
+            bool use24h = SettingsService.GetUse24HourTime();
+            bool weekMon = SettingsService.GetWeekStartMonday();
+
+            // Prevent callbacks while assigning
+            twentyFourHrToggle.SetIsOnWithoutNotify(use24h);
+            monWeekStartToggle.SetIsOnWithoutNotify(weekMon);
+
+            // Clear old listeners
+            twentyFourHrToggle.onValueChanged.RemoveAllListeners();
+            monWeekStartToggle.onValueChanged.RemoveAllListeners();
+
+            // --- Bind ---
+            twentyFourHrToggle.onValueChanged.AddListener(On24HourToggleChanged);
+            monWeekStartToggle.onValueChanged.AddListener(OnWeekStartToggleChanged);
+        }
+
+        private void On24HourToggleChanged(bool value)
+        {
+            SettingsService.SetUse24HourTime(value);
+        }
+
+        private void OnWeekStartToggleChanged(bool value)
+        {
+            SettingsService.SetWeekStartMonday(value);
+        }
+
+        // --- Import/Export ---
 
         public void ExportDB()
         {
@@ -124,17 +161,18 @@ namespace LocalCalendar.Controllers
             importExportStatusText.text = TMPUtils.ColorStatus(status, text, text);
         }
 
-        public void CancelAllNotifications()
-        {
-            NotificationScheduler.CancelAll();
-        }
         
+        // --- Tech Zone/Debug ---
+
         public void CopyDbPath()
         {
             GUIUtility.systemCopyBuffer = Application.persistentDataPath;
         }
-        
-        // ---------- DEBUG ----------
+
+        public void CancelAllNotifications()
+        {
+            NotificationScheduler.CancelAll();
+        }
 
         public void SendTestNotification()
         {

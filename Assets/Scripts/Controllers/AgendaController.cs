@@ -47,6 +47,7 @@ namespace LocalCalendar.Controllers
         private List<LayoutItem> _layoutItems;
 
         const float HourHeight = 250f;
+        const float MinItemHeight = 90f;
 
         void OnEnable()
         {
@@ -62,11 +63,13 @@ namespace LocalCalendar.Controllers
         void Start()
         {
             _repo = new CalendarRepository();
-            _visibleDate = DateTime.Today;
+            _visibleDate = DateContext.CurrentShownDay;//DateTime.Today;
 
-            header.Configure(new HeaderConfig{ SideMenuPopover = sideMenuPopover });
-            header.OnPrev += () => ChangeDay(-1);
-            header.OnNext += () => ChangeDay(1);
+            header.Configure(new HeaderConfig{ SideMenuPopover = sideMenuPopover,
+                                               ShowToday = true });
+            header.OnPrev += PrevDay;
+            header.OnNext += NextDay;
+            header.OnToday += Today;
 
             BuildHours();
             Refresh();
@@ -87,9 +90,24 @@ namespace LocalCalendar.Controllers
             StartCoroutine(RelayoutRoutine());
         }
 
-        void ChangeDay(int delta)
+        void PrevDay()
         {
-            _visibleDate = _visibleDate.AddDays(delta);
+            DateContext.PrevDay();
+            _visibleDate = DateContext.CurrentShownDay;
+            Refresh();
+        }
+
+        void NextDay()
+        {
+            DateContext.NextDay();
+            _visibleDate = DateContext.CurrentShownDay;
+            Refresh();
+        }
+
+        void Today()
+        {
+            DateContext.Today();
+            _visibleDate = DateContext.CurrentShownDay;
             Refresh();
         }
 
@@ -101,7 +119,10 @@ namespace LocalCalendar.Controllers
                 row.anchoredPosition = new Vector2(0, -i * HourHeight);
 
                 var label = row.GetComponentInChildren<TMP_Text>();
-                label.text = DateTime.Today.AddHours(i).ToString("h\ntt");//PlayerSettings.FormatTime(DateTime.Today.AddHours(i));
+                label.text = AppUtils.FormatTime(
+                    DateTime.Today.AddHours(i),
+                    compactMode: true
+                );
             }
 
             contentRoot.sizeDelta = new Vector2(
@@ -128,7 +149,7 @@ namespace LocalCalendar.Controllers
 
             var now = DateTime.Now;
 
-            nowTimeLabel.text = now.ToString("h:mm tt");
+            nowTimeLabel.text = AppUtils.FormatTime(now);
 
             float y = (float)now.TimeOfDay.TotalHours * HourHeight;
 
@@ -261,10 +282,12 @@ namespace LocalCalendar.Controllers
 
         void ApplyLayout(LayoutItem item, int col, int colCount)
         {
+            // Figure out the height
             float yStart = (float)item.start.TimeOfDay.TotalHours * HourHeight;
             float yEnd   = (float)item.end.TimeOfDay.TotalHours   * HourHeight;
 
-            float height = Mathf.Max(30, yEnd - yStart);
+            float rawHeight = yEnd - yStart;
+            float height = Mathf.Max(MinItemHeight, rawHeight);
 
             var rt = item.view.GetComponent<RectTransform>();
 
@@ -359,7 +382,6 @@ namespace LocalCalendar.Controllers
                 ApplyLayout(item, myCol, colCount);
             }
         }
-
 
         private bool Overlaps(LayoutItem a, LayoutItem b)
         {

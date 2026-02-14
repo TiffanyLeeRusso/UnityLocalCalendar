@@ -101,15 +101,6 @@ namespace LocalCalendar.Controllers
             LayoutRebuilder.ForceRebuildLayoutImmediate(rootCanvas);
 
             UpdateGridSizing();
-            /*
-            // Now that the MonthGrid RectTransform has been shrunk by the VLG 
-            // we calculate the cellSize based on that new, smaller Rect.
-            Vector2 newSize = CalendarUtils.ResizeGrid(monthGridLayout, monthGrid);
-            monthGridLayout.cellSize = newSize;
-            weekdayHeader.Build(newSize.x);
-            */
-            //monthGridLayout.enabled = true;
-            //LayoutRebuilder.ForceRebuildLayoutImmediate(monthGrid);
 
             // Show the UI
             if (mainCanvasGroup != null) mainCanvasGroup.alpha = 1;
@@ -162,7 +153,7 @@ namespace LocalCalendar.Controllers
                 DateTime.Today :
                 firstDay; // Today if we are on the current month; otherwise, the first of the month
 
-            int startOffset = (int)firstDay.DayOfWeek;
+            int startOffset = CalendarUtils.GetStartOffset(firstDay);
             DateTime gridStart = firstDay.AddDays(-startOffset);
 
             for (int i = 0; i < 42; i++)

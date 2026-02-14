@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using LocalCalendar.Services;
 
 namespace LocalCalendar.Prefabs
 {
@@ -31,10 +32,23 @@ namespace LocalCalendar.Prefabs
             hourDropdown.ClearOptions();
 
             var options = new List<string>();
-            for (int h = 1; h <= 12; h++)
-                options.Add(h.ToString());
+
+            bool use24 = SettingsService.GetUse24HourTime();
+
+            if (use24)
+            {
+                for (int h = 0; h < 24; h++)
+                    options.Add(h.ToString("00"));
+            }
+            else
+            {
+                for (int h = 1; h <= 12; h++)
+                    options.Add(h.ToString());
+            }
 
             hourDropdown.AddOptions(options);
+
+            amPmToggle.gameObject.SetActive(!use24);
         }
 
         private void PopulateMinutes()
@@ -52,30 +66,51 @@ namespace LocalCalendar.Prefabs
         {
             _suppressEvents = true;
 
+            bool use24 = SettingsService.GetUse24HourTime();
+
             int hour24 = time.Hour;
             int minute = time.Minute;
 
-            bool isPm = hour24 >= 12;
-            int hour12 = hour24 % 12;
-            if (hour12 == 0) hour12 = 12;
+            if (use24)
+            {
+                hourDropdown.value = hour24;
+            }
+            else
+            {
+                bool isPm = hour24 >= 12;
+                int hour12 = hour24 % 12;
+                if (hour12 == 0) hour12 = 12;
 
-            hourDropdown.value = hour12 - 1;
+                hourDropdown.value = hour12 - 1;
+                amPmToggle.isOn = isPm;
+            }
+
             minuteDropdown.value = Mathf.Clamp(minute, 0, 59);
-            amPmToggle.isOn = isPm;
 
             _suppressEvents = false;
         }
 
         public TimeSpan GetTime()
         {
-            int hour12 = hourDropdown.value + 1;
+            bool use24 = SettingsService.GetUse24HourTime();
+
             int minute = minuteDropdown.value;
-            bool isPm = amPmToggle.isOn;
 
-            int hour24 = hour12 % 12;
-            if (isPm) hour24 += 12;
+            if (use24)
+            {
+                int hour24 = hourDropdown.value;
+                return new TimeSpan(hour24, minute, 0);
+            }
+            else
+            {
+                int hour12 = hourDropdown.value + 1;
+                bool isPm = amPmToggle.isOn;
 
-            return new TimeSpan(hour24, minute, 0);
+                int hour24 = hour12 % 12;
+                if (isPm) hour24 += 12;
+
+                return new TimeSpan(hour24, minute, 0);
+            }
         }
 
         private void NotifyChanged()

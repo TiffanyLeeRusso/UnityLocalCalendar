@@ -64,7 +64,26 @@ namespace LocalCalendar.Data
             });
         }
 
+
         // --- DB Gets ---
+
+        public List<CalendarItem> Search(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+                return new List<CalendarItem>();
+
+            query = query.ToLowerInvariant();
+
+            return GetAllCalendarItems()
+                .Where(x =>
+                       (!string.IsNullOrEmpty(x.Title) &&
+                        x.Title.ToLowerInvariant().Contains(query)) ||
+                       (!string.IsNullOrEmpty(x.Note) &&
+                        x.Note.ToLowerInvariant().Contains(query))
+                )
+                .OrderBy(item => item.StartUtc)
+                .ToList();
+        }
 
         private void LoadMaps(
             out Dictionary<string, ReminderRow> reminderMap,

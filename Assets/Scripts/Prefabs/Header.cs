@@ -45,9 +45,7 @@ namespace LocalCalendar.Prefabs
 
         public void Configure(HeaderConfig config)
         {
-            title.text = config.Title;
             sceneTitle.text = config.SceneTitle;
-            currentDate = config.CurrentDate;
             sideMenuPopover = config.SideMenuPopover;
 
             sidePanelButton.gameObject.SetActive(config.ShowSidePanel);

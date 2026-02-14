@@ -21,13 +21,25 @@ namespace LocalCalendar.Prefabs
         private DateTime _visibleMonth;
         private DateTime _selectedDate;
         private GridLayoutGroup monthGridLayout;
-        private bool _isInitialized;
-        // Keep track of screen size for orientation changes
-        // Note since we are instanced we must keep track of these ourselves.
-        private float _lastWidth;
-        private float _lastHeight;
+        private bool _initialized;
 
         public event Action<DateTime> OnDateChanged;
+
+        void OnEnable()
+        {
+            if (LayoutWatcher.Instance != null)
+                LayoutWatcher.Instance.OnRelayout += HandleRelayout;
+
+            EnsureInitialized();
+            RefreshMonth();
+            SyncLayoutNow();
+        }
+
+        void OnDisable()
+        {
+            if (LayoutWatcher.Instance != null)
+                LayoutWatcher.Instance.OnRelayout -= HandleRelayout;
+        }
 
         
         // --- Public interface ---
@@ -36,9 +48,13 @@ namespace LocalCalendar.Prefabs
 
         public void SetDate(DateTime date)
         {
+            EnsureInitialized();
+
             _selectedDate = date.Date;
             _visibleMonth = new DateTime(date.Year, date.Month, 1);
+
             RefreshMonth();
+            SyncLayoutNow();
         }
 
         public void NextMonth()
@@ -58,41 +74,41 @@ namespace LocalCalendar.Prefabs
         
         void Awake()
         {
-            _visibleMonth = DateTime.Today;
-            _selectedDate = DateTime.Today;
+            //_visibleMonth = DateTime.Today;
+            //_selectedDate = DateTime.Today;
             monthGridLayout = monthGrid.GetComponent<GridLayoutGroup>();
-            BuildGrid();
+            //BuildGrid();
         }
 
+        /*
         void Start()
         {
             // Initial setup
             RefreshMonth();
             // Do an immediate layout calculation. This prevents a visible sizing shift.
             SyncLayoutNow();
+            }*/
 
-            _isInitialized = true;
-
-            // Set initial tracking values so Update() doesn't trigger immediately
-            _lastWidth = Screen.width;
-            _lastHeight = Screen.height;
-        }
-
-        void Update()
+        private void EnsureInitialized()
         {
-            CheckScreenSize();
+            if (_initialized) return;
+
+            monthGridLayout = monthGrid.GetComponent<GridLayoutGroup>();
+
+            if (_cells.Count == 0)
+                BuildGrid();
+
+            if (_selectedDate == default)
+                _selectedDate = DateTime.Today;
+
+            if (_visibleMonth == default)
+                _visibleMonth = new DateTime(_selectedDate.Year, _selectedDate.Month, 1);
+
+            _initialized = true;
         }
 
-        void OnRectTransformDimensionsChange()
-        {
-            if (_isInitialized && gameObject.activeInHierarchy)
-            {
-                HandleUpdateLayout();
-            }
-        }
-
-
-        // --- Orientation-change handling ---
+        
+        // --- Layout handling ---
 
         private void ResizeGrid()
         {
@@ -111,49 +127,28 @@ namespace LocalCalendar.Prefabs
             LayoutRebuilder.ForceRebuildLayoutImmediate(monthGrid);
         }
 
-        private void CheckScreenSize()
-        {
-            // Check if dimensions have changed since last frame
-            if (Math.Abs(Screen.width - _lastWidth) > 0.1f || Math.Abs(Screen.height - _lastHeight) > 0.1f)
-            {
-                _lastWidth = Screen.width;
-                _lastHeight = Screen.height;
-
-                if (_isInitialized)
-                {
-                    // Trigger the redraw logic
-                    HandleUpdateLayout();
-                }
-            }
-        }
-
-        private void HandleUpdateLayout()
+        private void HandleRelayout()
         {
             if (gameObject.activeInHierarchy)
             {
                 StopAllCoroutines();
-                StartCoroutine(UpdateLayout());
+                StartCoroutine(RelayoutRoutine());
             }
         }
 
-        private IEnumerator UpdateLayout()
+        private IEnumerator RelayoutRoutine()
         {
-            // Frame 1: Wait for OS/Unity to acknowledge new resolution
-            yield return null; 
-
-            // Frame 2: Disable layout and force Canvas update
             monthGridLayout.enabled = false;
+
+            yield return null; 
             Canvas.ForceUpdateCanvases();
             yield return null;
 
-            // Frame 3: Apply new math
             ResizeGrid();
 
-            // Final Pass: Re-enable and rebuild
             monthGridLayout.enabled = true;
             LayoutRebuilder.ForceRebuildLayoutImmediate(monthGrid);
         }
-
         
         // --- Calendar builder ---
 
@@ -168,14 +163,13 @@ namespace LocalCalendar.Prefabs
 
         private void RefreshMonth()
         {
-            HandleUpdateLayout();
-
             monthLabel.text = _visibleMonth.ToString("MMMM yyyy");
 
             int year = _visibleMonth.Year;
             int month = _visibleMonth.Month;
 
-            int firstWeekday = CalendarUtils.FirstWeekdayOfMonth(year, month);
+            DateTime firstDay = new DateTime(year, month, 1);
+            int firstWeekday = CalendarUtils.GetStartOffset(firstDay);
             int daysInMonth = CalendarUtils.DaysInMonth(year, month);
 
             DateTime gridStart =

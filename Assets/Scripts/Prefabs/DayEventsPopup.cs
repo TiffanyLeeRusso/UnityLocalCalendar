@@ -10,7 +10,7 @@ namespace LocalCalendar.Prefabs
 {
     public class DayEventsPopup : MonoBehaviour
     {
-        [SerializeField] private TMP_InputField dateLabel;
+        [SerializeField] private Header header;
         [SerializeField] private Transform content;
         [SerializeField] private DayEventRow rowPrefab;
 
@@ -22,18 +22,28 @@ namespace LocalCalendar.Prefabs
             _repo = new CalendarRepository();
         }
 
+        void Start()
+        {
+            header.Configure(new HeaderConfig{ ShowBack = true,
+                                               ShowSidePanel = false,
+                                               SceneTitle = "Day View" });
+            header.OnBack += Hide;
+            header.OnPrev += PrevDay;
+            header.OnNext += NextDay;
+        }
+
         public void Show(DateTime date)
         {
             gameObject.SetActive(true);
             SetDate(date);
         }
 
-        public void OnPrevDay()
+        public void PrevDay()
         {
             SetDate(_currentDate.AddDays(-1));
         }
 
-        public void OnNextDay()
+        public void NextDay()
         {
             SetDate(_currentDate.AddDays(1));
         }
@@ -41,7 +51,8 @@ namespace LocalCalendar.Prefabs
         private void SetDate(DateTime date)
         {
             _currentDate = date.Date;
-            dateLabel.text = _currentDate.ToString("dddd, MMM d");
+            header.title.text = _currentDate.ToString("dddd, MMM d");
+            header.currentDate = _currentDate;
             LoadEvents();
         }
 
@@ -57,17 +68,10 @@ namespace LocalCalendar.Prefabs
             }
         }
 
-        public void Add()
-        {
-            // To open create/edit scene
-            EditItemContext.SelectedDate = _currentDate;
-            SceneHistoryManager.Instance.LoadScene(AppScene.EditItem);
-        }
-
         private void OnItemClicked((CalendarItem item, DateTime shownOnDate) args)
         {
+            EditItemContext.Clear();
             EditItemContext.EditingItemId = args.item.Id;
-            EditItemContext.SelectedDate = null;
             SceneHistoryManager.Instance.LoadScene(AppScene.EditItem);
         }
         
