@@ -56,6 +56,11 @@ namespace LocalCalendar.Services
             ResolveRoot();
         }
 
+        public void ForceRelayout()
+        {
+            OnRelayout?.Invoke();
+        }
+
         void ResolveRoot()
         {
             Canvas canvas = FindFirstObjectByType<Canvas>();

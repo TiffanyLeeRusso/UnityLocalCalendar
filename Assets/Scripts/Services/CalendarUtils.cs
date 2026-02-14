@@ -18,6 +18,20 @@ namespace LocalCalendar.Services
         public static int FirstWeekdayOfMonth(int year, int month)
             => (int)new DateTime(year, month, 1).DayOfWeek; // 0 = Sunday
 
+        public static int GetStartOffset(DateTime firstDayOfMonth)
+        {
+            int weekday = (int)firstDayOfMonth.DayOfWeek; // Sunday = 0
+
+            if (SettingsService.GetWeekStartMonday())
+            {
+                // Convert Sunday=0..Saturday=6
+                // To Monday=0..Sunday=6
+                weekday = (weekday + 6) % 7;
+            }
+
+            return weekday;
+        }
+        
         // GetExpandedMonthItems
         public static IOrderedEnumerable<IGrouping<DateTime, (DateTime date, CalendarItem item, DateTime occurrenceStart)>>
             GetExpandedMonthItems(CalendarRepository repo, DateTime rangeStart, DateTime rangeEnd)

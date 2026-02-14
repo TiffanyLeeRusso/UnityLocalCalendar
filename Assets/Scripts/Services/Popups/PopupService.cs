@@ -1,13 +1,14 @@
 using UnityEngine;
 using LocalCalendar.Permissions;
+using LocalCalendar.Prefabs;
 
 namespace LocalCalendar.Services
 {
     public static class PopupService
     {
-        private static PermissionsRequestUI _instance;
+        private static PermissionsRequestPopup _instance;
 
-        public static PermissionsRequestUI ShowPermissionsPopup()
+        public static PermissionsRequestPopup ShowPermissionsPopup()
         {
             if (_instance != null)
             {
@@ -16,8 +17,7 @@ namespace LocalCalendar.Services
                 return _instance;
             }
 
-            // Instantiate as before
-            var prefab = Resources.Load<PermissionsRequestUI>(
+            var prefab = Resources.Load<PermissionsRequestPopup>(
                 "UI/Popups/PermissionsRequestPopup");
 
             if (prefab == null)
