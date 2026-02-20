@@ -11,5 +11,10 @@ namespace LocalCalendar.Prefabs
         {
             label.text = text;
         }
+
+        public void Layout(float fontSize = 50)
+        {
+            label.fontSize = fontSize;
+        }
     }
 }

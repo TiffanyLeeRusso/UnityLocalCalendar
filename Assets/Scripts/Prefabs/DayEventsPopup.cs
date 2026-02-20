@@ -72,6 +72,7 @@ namespace LocalCalendar.Prefabs
         {
             EditItemContext.Clear();
             EditItemContext.EditingItemId = args.item.Id;
+            EditItemContext.Mode = EditItemMode.Preview;
             SceneHistoryManager.Instance.LoadScene(AppScene.EditItem);
         }
         

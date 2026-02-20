@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using LocalCalendar.Data;
 
 namespace LocalCalendar.Prefabs
 {
     public class DayCell : MonoBehaviour
     {
+        [SerializeField] private Button cellButton;
         [SerializeField] private TextMeshProUGUI dayNumber;
         [SerializeField] private GameObject highlight;
         [SerializeField] private RectTransform eventsContainer;
@@ -17,7 +19,7 @@ namespace LocalCalendar.Prefabs
         private DateTime _date;
         private Action<DateTime> _onDayClicked;
         private Action<(CalendarItem item, DateTime shownOnDate)> _onItemClicked;
-        
+
         public void Initialize(
             DateTime date,
             bool isToday,
@@ -36,6 +38,18 @@ namespace LocalCalendar.Prefabs
             highlight.SetActive(isToday);
 
             BuildRows(items);
+        }
+
+        public void Layout(float fontSize = 50, bool showEvents = true, bool allowCellClick = true)
+        {
+            dayNumber.fontSize = fontSize;
+            eventsContainer.gameObject.SetActive(showEvents);
+
+            // Enable or disable cell interactivity so clicks pass through
+            var cellButton = gameObject.GetComponent<Button>();
+            if (cellButton != null) cellButton.enabled = allowCellClick;
+            var cellTrigger = gameObject.GetComponent<EventTrigger>();
+            if (cellTrigger != null) cellTrigger.enabled = allowCellClick;
         }
 
         private void BuildRows(List<(CalendarItem item, DateTime occurrenceStart)> items)

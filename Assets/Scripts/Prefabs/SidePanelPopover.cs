@@ -42,6 +42,11 @@ namespace LocalCalendar.Services
             SceneHistoryManager.Instance.LoadScene(AppScene.Agenda);
         }
 
+        public void OpenYear()
+        {
+            SceneHistoryManager.Instance.LoadScene(AppScene.Year);
+        }
+
         public void OpenSchedule()
         {
             SceneHistoryManager.Instance.LoadScene(AppScene.Schedule);

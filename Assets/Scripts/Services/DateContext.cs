@@ -4,6 +4,7 @@ namespace LocalCalendar.Services
 {
     public static class DateContext
     {
+        private static DateTime? _currentShownYear;
         private static DateTime? _currentShownMonth;
         private static DateTime? _currentShownDay;
 
@@ -63,6 +64,29 @@ namespace LocalCalendar.Services
             }
         }
 
+        // --- Year ---
+
+        // Gets or sets the currently shown year.
+        // If unset, returns today's year.
+        public static DateTime CurrentShownYear
+        {
+            get
+            {
+                if (_currentShownYear == null)
+                {
+                    var today = DateTime.Today;
+                    return new DateTime(today.Year, 1, 1);
+                }
+
+                return new DateTime(_currentShownYear.Value.Year, 1, 1);
+            }
+            set
+            {
+                Clear();
+                _currentShownYear = new DateTime(value.Year, 1, 1);
+            }
+        }
+        
         // --- Navigation ---
 
         public static void Today()

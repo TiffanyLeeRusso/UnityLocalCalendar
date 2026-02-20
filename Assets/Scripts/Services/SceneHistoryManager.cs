@@ -11,7 +11,8 @@ namespace LocalCalendar.Services
         Agenda,
         EditItem,
         Schedule,
-        Settings
+        Settings,
+        Year
     }
 
     public interface IBackHandler
@@ -152,6 +153,7 @@ namespace LocalCalendar.Services
                 AppScene.EditItem => "EditItemScene",
                 AppScene.Schedule => "ScheduleScene",
                 AppScene.Settings => "SettingsScene",
+                AppScene.Year => "YearScene",
                 _ => "CalendarScene" // Default fallback
             };
         }
@@ -165,6 +167,7 @@ namespace LocalCalendar.Services
                 "EditItemScene" => AppScene.EditItem,
                 "ScheduleScene" => AppScene.Schedule,
                 "SettingsScene" => AppScene.Settings,
+                "YearScene" => AppScene.Year,
                 _ => AppScene.Calendar // Default fallback
             };
         }

@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using LocalCalendar.Services;
 
 namespace LocalCalendar.Prefabs
@@ -10,7 +11,7 @@ namespace LocalCalendar.Prefabs
         [SerializeField] Transform container;
         [SerializeField] WeekdayHeaderCell cellPrefab;
 
-        public void Build(float cellWidth)
+        public void Build(float cellWidth, float fontSize = 50f)
         {
             foreach (Transform c in container)
                 Destroy(c.gameObject);
@@ -28,6 +29,7 @@ namespace LocalCalendar.Prefabs
                 var cell = Instantiate(cellPrefab, container);
 
                 cell.Set(names[idx]);
+                if (fontSize > 0) cell.Layout(fontSize);
 
                 var le = cell.GetComponent<LayoutElement>();
                 if (le != null)

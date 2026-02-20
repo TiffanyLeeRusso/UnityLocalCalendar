@@ -62,25 +62,5 @@ namespace LocalCalendar.Services
 
             return $"{time:ddd, MMM d} {timePart}";
         }
-
-        /*
-        public static string FormatDate(CalendarItem item)
-        {
-            DateTime start = item.StartDate;
-            DateTime end   = CalendarUtils.GetOccurrenceEnd(item, start);
-
-            if (item.AllDay ||
-                (start.TimeOfDay == TimeSpan.Zero &&
-                 (end - start).TotalHours >= 23))
-                return "All day";
-
-            if (start.Date == end.Date)
-            {
-                return $"{FormatTime(start)} – {FormatTime(end)}";
-            }
-
-            return $"{start:MMM d} {FormatTime(start)} → {end:MMM d} {FormatTime(end)}";
-        }
-        */
     }
 }
