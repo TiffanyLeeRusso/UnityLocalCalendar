@@ -105,6 +105,7 @@ namespace LocalCalendar.Controllers
         private void OnItemClicked((CalendarItem item, DateTime shownOnDate) args)
         {
             EditItemContext.EditingItemId = args.item.Id;
+            EditItemContext.Mode = EditItemMode.Preview;
             SceneHistoryManager.Instance.LoadScene(AppScene.EditItem);
         }
 

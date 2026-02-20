@@ -444,6 +444,7 @@ namespace LocalCalendar.Controllers
             bool isReminder = _item.Reminder != null;
             if (EditItemContext.Mode == EditItemMode.Edit)
             {
+                reminderText.gameObject.SetActive(false);
                 // Set the reminder toggle.
                 // It is always visible in add/edit mode
                 reminderToggle.isOn = isReminder;

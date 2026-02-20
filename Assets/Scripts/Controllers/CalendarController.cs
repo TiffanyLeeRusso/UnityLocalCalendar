@@ -5,7 +5,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using LocalCalendar.Data;
-using LocalCalendar.App;
 using LocalCalendar.Services;
 using LocalCalendar.Prefabs;
 

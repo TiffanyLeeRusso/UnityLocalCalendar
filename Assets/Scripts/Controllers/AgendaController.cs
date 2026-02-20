@@ -134,7 +134,8 @@ namespace LocalCalendar.Controllers
         private void OnItemTapped(CalendarItem item)
         {
             EditItemContext.EditingItemId = item.Id;
-            UnityEngine.SceneManagement.SceneManager.LoadScene("EditItemScene");
+            EditItemContext.Mode = EditItemMode.Preview;
+            SceneHistoryManager.Instance.LoadScene(AppScene.EditItem);
         }
 
         void UpdateNowIndicator()
