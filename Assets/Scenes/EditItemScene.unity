@@ -2986,6 +2986,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: NoteInput
       objectReference: {fileID: 0}
+    - target: {fileID: 5701112408543138895, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6149676060450839447, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
       propertyPath: m_text
       value: Note
