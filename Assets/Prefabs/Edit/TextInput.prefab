@@ -67,8 +67,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u200B"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 08a373fa467757e48bb3d8a65c9f7f1a, type: 2}
-  m_sharedMaterial: {fileID: 5516003282893336885, guid: 08a373fa467757e48bb3d8a65c9f7f1a, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: d858b0f62dd2a3444a7e46fc93a5432f, type: 2}
+  m_sharedMaterial: {fileID: 9133240772780193346, guid: d858b0f62dd2a3444a7e46fc93a5432f, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -201,6 +201,8 @@ GameObject:
   - component: {fileID: 8059449766791301305}
   - component: {fileID: 6510540311294537910}
   - component: {fileID: 6317869297821973751}
+  - component: {fileID: 5701112408543138895}
+  - component: {fileID: 8808308761545628906}
   m_Layer: 5
   m_Name: TextInput
   m_TagString: Untagged
@@ -358,12 +360,12 @@ MonoBehaviour:
   m_CaretWidth: 4
   m_ReadOnly: 0
   m_RichText: 0
-  m_GlobalFontAsset: {fileID: 11400000, guid: 08a373fa467757e48bb3d8a65c9f7f1a, type: 2}
+  m_GlobalFontAsset: {fileID: 11400000, guid: d858b0f62dd2a3444a7e46fc93a5432f, type: 2}
   m_OnFocusSelectAll: 0
   m_ResetOnDeActivation: 1
   m_KeepTextSelectionVisible: 0
   m_RestoreOriginalTextOnEscape: 1
-  m_isRichTextEditingAllowed: 0
+  m_isRichTextEditingAllowed: 1
   m_LineLimit: 0
   isAlert: 0
   m_InputValidator: {fileID: 0}
@@ -375,11 +377,35 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4666765366896454427}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3ba70fc715282489b4c786f8e578ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TMPForceFocus
+--- !u!114 &5701112408543138895
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4666765366896454427}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61d6bf12d4bf4d940a5a45d4432ec656, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ForceNativeInput
+--- !u!114 &8808308761545628906
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4666765366896454427}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7bc0e99679c6ac04e8b941347f9912b3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MobileInputHelper
 --- !u!1 &6324425440023495982
 GameObject:
   m_ObjectHideFlags: 0
@@ -448,8 +474,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 08a373fa467757e48bb3d8a65c9f7f1a, type: 2}
-  m_sharedMaterial: {fileID: 5516003282893336885, guid: 08a373fa467757e48bb3d8a65c9f7f1a, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: d858b0f62dd2a3444a7e46fc93a5432f, type: 2}
+  m_sharedMaterial: {fileID: 9133240772780193346, guid: d858b0f62dd2a3444a7e46fc93a5432f, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

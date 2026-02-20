@@ -188,7 +188,7 @@ MonoBehaviour:
   m_CaretWidth: 1
   m_ReadOnly: 1
   m_RichText: 0
-  m_GlobalFontAsset: {fileID: 11400000, guid: 08a373fa467757e48bb3d8a65c9f7f1a, type: 2}
+  m_GlobalFontAsset: {fileID: 11400000, guid: d858b0f62dd2a3444a7e46fc93a5432f, type: 2}
   m_OnFocusSelectAll: 0
   m_ResetOnDeActivation: 1
   m_KeepTextSelectionVisible: 0
@@ -265,8 +265,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u200B"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 08a373fa467757e48bb3d8a65c9f7f1a, type: 2}
-  m_sharedMaterial: {fileID: 5516003282893336885, guid: 08a373fa467757e48bb3d8a65c9f7f1a, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: d858b0f62dd2a3444a7e46fc93a5432f, type: 2}
+  m_sharedMaterial: {fileID: 9133240772780193346, guid: d858b0f62dd2a3444a7e46fc93a5432f, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -315,7 +315,7 @@ MonoBehaviour:
   m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 1
   checkPaddingRequired: 0
-  m_isRichText: 1
+  m_isRichText: 0
   m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
