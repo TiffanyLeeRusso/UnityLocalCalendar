@@ -176,7 +176,7 @@ MonoBehaviour:
   m_fontSizeMax: 72
   m_fontStyle: 0
   m_HorizontalAlignment: 1
-  m_VerticalAlignment: 256
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0
@@ -428,9 +428,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LocalCalendar.Calendar.DayCell
   cellButton: {fileID: 3521918954583269063}
   dayNumber: {fileID: 5985368542803958358}
+  dayNumberRT: {fileID: 1209535514456884805}
   highlight: {fileID: 2319084153425527268}
   eventsContainer: {fileID: 2963747873653416246}
-  dayEventRowPrefab: {fileID: 3818637018337634926, guid: a55947ebdfd1fa94ea5474c687552056, type: 3}
+  dayEventRowPrefab: {fileID: 3818637018337634926, guid: f0541ed3bea4dd34881721034deeaa82, type: 3}
 --- !u!114 &878427902447682041
 MonoBehaviour:
   m_ObjectHideFlags: 0
