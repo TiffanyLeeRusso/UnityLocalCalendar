@@ -400,6 +400,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3186717948048695485}
   - component: {fileID: 7636733514445742645}
+  - component: {fileID: 2059609847876427183}
   m_Layer: 0
   m_Name: Content
   m_TagString: Untagged
@@ -424,7 +425,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 3000}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &7636733514445742645
 MonoBehaviour:
@@ -444,14 +445,28 @@ MonoBehaviour:
     m_Top: 0
     m_Bottom: 0
   m_ChildAlignment: 0
-  m_Spacing: 0
+  m_Spacing: 50
   m_ChildForceExpandWidth: 1
-  m_ChildForceExpandHeight: 1
+  m_ChildForceExpandHeight: 0
   m_ChildControlWidth: 1
   m_ChildControlHeight: 0
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &2059609847876427183
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3053046910177571291}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3245ec927659c4140ac4f8d17403cc18, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.ContentSizeFitter
+  m_HorizontalFit: 0
+  m_VerticalFit: 2
 --- !u!1 &3380403344579073353
 GameObject:
   m_ObjectHideFlags: 0
@@ -1203,8 +1218,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 6936916615513965771}
   m_HandleRect: {fileID: 1165286613376920384}
   m_Direction: 2
-  m_Value: 1
-  m_Size: 0.39599666
+  m_Value: 0
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -2260,7 +2275,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 234802192773427479, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 83.01
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 234802192773427479, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2311,6 +2326,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2569074945251418076, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
+      propertyPath: m_text
+      value: "\u200B"
+      objectReference: {fileID: 0}
+    - target: {fileID: 2569074945251418076, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
       propertyPath: m_fontColor.b
       value: 0.13333334
       objectReference: {fileID: 0}
@@ -2332,6 +2351,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6149676060450839447, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
       propertyPath: m_text
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 6510540311294537910, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
+      propertyPath: m_Text
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 6510540311294537910, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
