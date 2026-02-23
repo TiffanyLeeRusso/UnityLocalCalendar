@@ -10,7 +10,7 @@ LocalCalendar is a custom calendar system implemented entirely in Unity. Instead
 Core goals:
 * Work fully offline, including exporting and importing the database if needed.
 * Support repeating and multi-day events.
-* Provide multiple views (Month grid, Day popup, Schedule list).
+* Provide multiple views (Month grid with day popup preview, Day view, Year view, Schedule list).
 
 <img src="https://github.com/TiffanyLeeRusso/UnityLocalCalendar/blob/main/Screenshots/1_CalendarScene.jpg" alt="Calendar View" style="width:50%; height:auto;">
 <img src="https://github.com/TiffanyLeeRusso/UnityLocalCalendar/blob/main/Screenshots/2_ScheduleScene.jpg" alt="Schedule View" style="width:50%; height:auto;">
@@ -26,10 +26,20 @@ Core goals:
 * Shows items per day.
 * Handles events spanning multiple days.
 
-#### Day Popup View
+#### Day Preview Popup
 * Click any day in the month grid to open this view.
 * Shows expanded occurrences for that specific day.
 * Supports repeating and multi-day events.
+
+#### Day (Agenda) View
+* Dynamic Time Grid: 24-hour scrollable timeline with a "Now" indicator line and timestamp.
+* Smart Layout Engine: Automatically calculates overlapping event columns to prevent text clipping.
+* Static Events Section: Dedicated top row for All-Day and Multi-Day events, keeping the timeline clean.
+
+#### Year Grid View
+* Twelve-Month Overview: Miniature 7-column calendar grids for the entire year.
+* Date Navigation: Instant jump to any month in the calendar.
+* Today Marker: Visual indicator for the current date across the yearly layout.
 
 #### Schedule View
 * Chronological list by day.
@@ -114,13 +124,8 @@ Expansion always happens at query time, not at storage time.
 
 
 ### Possible Future Improvements / Known Issues
-* The text-input cursor still doesn't show up on Android.
+* The text inputs do not support copy & paste.
 * Time zone switching.
-* Additional settings like big-text mode and themes
-* Search-event functionality.
+* Week view
 * UX niceties like multi-day bars in month grid, event colors, day and/or event emojis or stickers.
-* Investigate the font-displacement and kerning issues.
-* Use the DatePicker (with a clear button) for repetition end in EditItem scene.
-* Setting to start week on Sun or Mon.
-
 
