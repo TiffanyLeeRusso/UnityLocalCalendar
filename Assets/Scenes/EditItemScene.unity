@@ -925,7 +925,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2569074945251418076, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
       propertyPath: m_isRichText
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4666765366896454427, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
       propertyPath: m_Name
@@ -941,7 +941,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6510540311294537910, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
       propertyPath: m_RichText
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6510540311294537910, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
       propertyPath: m_CaretWidth
@@ -953,15 +953,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6510540311294537910, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
       propertyPath: m_CaretColor.b
-      value: 1
+      value: 0.972549
       objectReference: {fileID: 0}
     - target: {fileID: 6510540311294537910, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
       propertyPath: m_CaretColor.g
-      value: 1
+      value: 0.9411765
       objectReference: {fileID: 0}
     - target: {fileID: 6510540311294537910, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
       propertyPath: m_CaretColor.r
-      value: 1
+      value: 0.9411765
       objectReference: {fileID: 0}
     - target: {fileID: 6510540311294537910, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
       propertyPath: m_CaretBlinkRate
@@ -986,6 +986,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4666765366896454427, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
       insertIndex: -1
       addedObject: {fileID: 820595704}
+    - targetCorrespondingSourceObject: {fileID: 4666765366896454427, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 820595705}
   m_SourcePrefab: {fileID: 100100000, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
 --- !u!224 &209098983 stripped
 RectTransform:
@@ -2979,6 +2982,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2569074945251418076, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
+      propertyPath: m_isRichText
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2569074945251418076, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
       propertyPath: m_TextWrappingMode
       value: 1
       objectReference: {fileID: 0}
@@ -2998,6 +3005,10 @@ PrefabInstance:
       propertyPath: m_LineType
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: 6510540311294537910, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
+      propertyPath: m_RichText
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8059449766791301305, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
       propertyPath: m_Enabled
       value: 1
@@ -3009,6 +3020,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4666765366896454427, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1524930772}
+    - targetCorrespondingSourceObject: {fileID: 4666765366896454427, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1524930773}
   m_SourcePrefab: {fileID: 100100000, guid: 4b5640328f326eb43b51d3a7d6e950d1, type: 3}
 --- !u!224 &753618090 stripped
 RectTransform:
@@ -3051,6 +3065,18 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: 0
   m_LayoutPriority: 1
+--- !u!114 &820595705
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 820595700}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33a1df8de817dcc40aebbe596356afea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalCalendar.Services.TMPInputLinkHandler
 --- !u!1 &874305457
 GameObject:
   m_ObjectHideFlags: 0
@@ -4468,7 +4494,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1034505129}
   m_Direction: 2
   m_Value: 1
-  m_Size: 0.50444555
+  m_Size: 0.503224
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -5557,6 +5583,18 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: 0
   m_LayoutPriority: 1
+--- !u!114 &1524930773
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1524930768}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33a1df8de817dcc40aebbe596356afea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalCalendar.Services.TMPInputLinkHandler
 --- !u!1 &1556908081
 GameObject:
   m_ObjectHideFlags: 0
