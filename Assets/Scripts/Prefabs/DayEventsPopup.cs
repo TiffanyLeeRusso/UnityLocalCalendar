@@ -51,7 +51,7 @@ namespace LocalCalendar.Prefabs
         private void SetDate(DateTime date)
         {
             _currentDate = date.Date;
-            header.title.text = _currentDate.ToString("dddd, MMM d");
+            header.title.text = _currentDate.ToString("ddd, MMM d, yyyy");
             header.currentDate = _currentDate;
             LoadEvents();
         }

@@ -12,6 +12,7 @@ namespace LocalCalendar.Prefabs
     {
         [SerializeField] private Button cellButton;
         [SerializeField] private TextMeshProUGUI dayNumber;
+        [SerializeField] private RectTransform dayNumberRT;
         [SerializeField] private GameObject highlight;
         [SerializeField] private RectTransform eventsContainer;
         [SerializeField] private DayEventRow dayEventRowPrefab;
@@ -43,6 +44,10 @@ namespace LocalCalendar.Prefabs
         public void Layout(float fontSize = 50, bool showEvents = true, bool allowCellClick = true)
         {
             dayNumber.fontSize = fontSize;
+            var dayNumHeight = fontSize + 10f;
+            dayNumberRT.sizeDelta = new Vector2(dayNumberRT.sizeDelta.x, dayNumHeight);
+            dayNumberRT.anchoredPosition = new Vector2(dayNumberRT.anchoredPosition.x, -(dayNumHeight/2));
+
             eventsContainer.gameObject.SetActive(showEvents);
 
             // Enable or disable cell interactivity so clicks pass through

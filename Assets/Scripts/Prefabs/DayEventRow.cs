@@ -2,6 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using System;
+using System.Collections.Generic;
 using LocalCalendar.Data;
 using LocalCalendar.Services;
 
@@ -15,8 +16,8 @@ namespace LocalCalendar.Prefabs
             Compact
         }
 
-        [SerializeField] private TMP_InputField titleLabel;
-        [SerializeField] private TMP_InputField timeLabel;
+        [SerializeField] private TextMeshProUGUI titleLabel;
+        [SerializeField] private TextMeshProUGUI timeLabel;
         [SerializeField] private GameObject iconContainer;
         [SerializeField] private GameObject reminderIcon;
         [SerializeField] private GameObject repeatIcon;
@@ -24,7 +25,6 @@ namespace LocalCalendar.Prefabs
 
         private CalendarItem _item;
         private DateTime _shownOnDate;
-        private ViewMode _mode;
         private Action<(CalendarItem item, DateTime shownOnDate)> _onClick;
 
         public void Initialize(CalendarItem item,
@@ -37,7 +37,6 @@ namespace LocalCalendar.Prefabs
             _onClick = onClick;
             _shownOnDate = shownOnDate;
 
-            // TODO: Merge this with AppUtils.FormatDate(CalendarItem)
             DateTime occurrenceEnd = CalendarUtils.GetOccurrenceEnd(item, occurrenceStart);
             bool isSingleDay = occurrenceStart.Date == occurrenceEnd.Date;
             bool isFirstDay = shownOnDate.Date == occurrenceStart.Date;
@@ -52,10 +51,10 @@ namespace LocalCalendar.Prefabs
             {
                 string start = AppUtils.FormatTime(occurrenceStart);
                 string end   = AppUtils.FormatTime(occurrenceEnd);
-
-                timeText = mode == ViewMode.Compact
-                    ? $"{start}\n – \n{end}"
-                    : $"{start} – {end}";
+                timeText = $"{start} – {end}";
+                //timeText = mode == ViewMode.Compact
+                //    ? $"{start}\n – \n{end}"
+                //    : $"{start} – {end}";
             }
             else
             {
@@ -69,42 +68,21 @@ namespace LocalCalendar.Prefabs
             timeLabel.text = timeText;
             titleLabel.text = item.Title;
 
-            reminderIcon.SetActive(_item.Type == CalendarItemType.Reminder);
+            if(mode == ViewMode.Full)
+            {
+                reminderIcon.SetActive(_item.Type == CalendarItemType.Reminder);
 
-            repeatIcon.SetActive(_item.RepeatRule != null);
-            repeatLabel.text = item.RepeatRule != null
-                ? DataFormatter.ToString(item.RepeatRule)
-                : "";
-            repeatLabel.gameObject.SetActive(item.RepeatRule != null);
-
-            _mode = mode;
-            ApplyMode();
+                repeatIcon.SetActive(_item.RepeatRule != null);
+                repeatLabel.text = item.RepeatRule != null
+                    ? DataFormatter.ToString(item.RepeatRule)
+                    : "";
+                repeatLabel.gameObject.SetActive(item.RepeatRule != null);
+            }
         }
 
         public void OnClick()
         {
             _onClick?.Invoke((item: _item, shownOnDate: _shownOnDate));
-        }
-
-        private void ApplyMode()
-        {
-            bool isActive = true;
-            switch (_mode)
-            {
-                case ViewMode.Compact:
-                    titleLabel.textComponent.fontSize = 30;
-                    isActive = false;
-                    break;
-
-                default:
-                case ViewMode.Full:
-                    titleLabel.textComponent.fontSize = 50;
-                    isActive = true;
-                    break;
-            }
-            
-            iconContainer.SetActive(isActive);
-            repeatLabel.gameObject.SetActive(isActive);
         }
     }
 }

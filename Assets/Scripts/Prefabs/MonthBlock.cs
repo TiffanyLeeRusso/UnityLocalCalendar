@@ -19,6 +19,7 @@ namespace LocalCalendar.Prefabs
         private Action<DateTime> _onMonthClicked;
         // Font size to use for day numbers in year view
         private const float GridTextFontSize = 15f;
+        private bool _isInitialized = false;
 
         public void Initialize(DateTime monthDate, Action<DateTime> onMonthClicked)
         {
@@ -37,6 +38,24 @@ namespace LocalCalendar.Prefabs
             }
 
             // Defer sizing until layout has settled
+            StartCoroutine(ApplySizingAfterLayout());
+
+            _isInitialized = true;
+        }
+
+        private void OnRectTransformDimensionsChange()
+        {
+            if (_isInitialized)
+            {
+                // We can't change the grid in the same frame as a layout callback
+                // so we trigger the update for the next frame.
+                Relayout(); 
+            }
+        }
+        
+        public void Relayout()
+        {
+            if (!gameObject.activeInHierarchy) return;
             StartCoroutine(ApplySizingAfterLayout());
         }
 
@@ -74,39 +93,60 @@ namespace LocalCalendar.Prefabs
 
         private IEnumerator ApplySizingAfterLayout()
         {
-            yield return null; // wait for YearContainer GLG to assign MonthBlock its size
-            yield return null; // wait one more for child layout to propagate into dayGrid
-            Canvas.ForceUpdateCanvases();
-            LayoutRebuilder.ForceRebuildLayoutImmediate(transform.parent as RectTransform); // YearContainer
+            //yield return null; // wait for YearContainer GLG to assign MonthBlock its size
+            //yield return null; // wait one more for child layout to propagate into dayGrid
+            //Canvas.ForceUpdateCanvases();
+            //LayoutRebuilder.ForceRebuildLayoutImmediate(transform.parent as RectTransform); // YearContainer
+            //LayoutRebuilder.ForceRebuildLayoutImmediate(transform as RectTransform); // MonthBlock
+            // Wait for the end of the frame so the VLG has 
+            // officially finished setting our new width/height
+            yield return new WaitForEndOfFrame();
             ApplySizing();
         }
 
-        private void ApplySizing()
+        public void ApplySizing()
         {
             var gridLayout = dayGrid.GetComponent<GridLayoutGroup>();
-            if (gridLayout == null) return;
+            var monthBlockRT = GetComponent<RectTransform>();
+    
+            // Get the total height available to the whole MonthBlock
+            float totalBlockHeight = monthBlockRT.rect.height;
 
+            // Subtract the heights of the other elements in the Vertical Layout Group
+            // We use LayoutUtility to get their "Preferred" heights (the space they actually take)
+            float labelHeight = LayoutUtility.GetPreferredHeight(monthLabel.rectTransform);
+            float headerHeight = LayoutUtility.GetPreferredHeight(weekdayHeader.GetComponent<RectTransform>());
+    
+            // Get the spacing from the Vertical Layout Group
+            var vlg = GetComponent<VerticalLayoutGroup>();
+            float vlgSpacing = vlg.spacing;
+            float vlgPadding = vlg.padding.top + vlg.padding.bottom;
+
+            // Space Left = Total - (Sum of other parts + spacing)
+            // There are 2 gaps between 3 objects (Label, Header, Grid)
+            float availableGridHeight = totalBlockHeight - vlgPadding - labelHeight - headerHeight - (vlgSpacing * 2);
+
+            float availableGridWidth = monthBlockRT.rect.width - (vlg.padding.left + vlg.padding.right);
+
+            // Calculate Cells
             const int columns = 7;
             const int rows = 6;
-
-            float totalWidth  = dayGrid.rect.width;
-            float totalHeight = dayGrid.rect.height;
 
             float spacingX = gridLayout.spacing.x;
             float spacingY = gridLayout.spacing.y;
             float paddingX = gridLayout.padding.left + gridLayout.padding.right;
-            float paddingY = gridLayout.padding.top  + gridLayout.padding.bottom;
+            float paddingY = gridLayout.padding.top + gridLayout.padding.bottom;
 
-            float cellWidth  = (totalWidth  - paddingX - spacingX * (columns - 1)) / columns;
-            float cellHeight = (totalHeight - paddingY - spacingY * (rows    - 1)) / rows;
+            float cellWidth = (availableGridWidth - paddingX - spacingX * (columns - 1)) / columns;
+            float cellHeight = (availableGridHeight - paddingY - spacingY * (rows - 1)) / rows;
 
-            gridLayout.cellSize = new Vector2(cellWidth, cellHeight);
-            gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            gridLayout.constraintCount = columns;
+            if (cellWidth > 0 && cellHeight > 0)
+            {
+                gridLayout.cellSize = new Vector2(cellWidth, cellHeight);
+                weekdayHeader.Build(cellWidth, GridTextFontSize);
+            }
 
-            // Now we have a real cellWidth, build the weekday header
-            weekdayHeader.Build(cellWidth, GridTextFontSize);
-
+            // Final Rebuild
             LayoutRebuilder.ForceRebuildLayoutImmediate(dayGrid);
         }
     }
