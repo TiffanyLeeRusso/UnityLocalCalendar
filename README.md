@@ -13,7 +13,7 @@ Core goals:
 * Provide multiple views (Month grid with day popup preview, Day view, Year view, Schedule list).
 
 <img src="https://github.com/TiffanyLeeRusso/UnityLocalCalendar/blob/main/Screenshots/1_CalendarScene.jpg" alt="Calendar View" style="width:50%; height:auto;">
-<img src="https://github.com/TiffanyLeeRusso/UnityLocalCalendar/blob/main/Screenshots/2_ScheduleScene.jpg" alt="Schedule View" style="width:50%; height:auto;">
+<img src="https://github.com/TiffanyLeeRusso/UnityLocalCalendar/blob/main/Screenshots/3_DayScene.jpg" alt="Schedule View" style="width:50%; height:auto;">
 
 ## Features Implemented
 
