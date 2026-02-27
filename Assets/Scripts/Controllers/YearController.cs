@@ -88,6 +88,17 @@ namespace LocalCalendar.Controllers
 
             UpdateGridSizing();
 
+            // Wait one more frame for the MonthBlock's DayGrid to realize
+            // its parent MonthBlock has changed size.
+            yield return null; 
+
+            // Tell each month to resize its internal grid to the new space
+            foreach (Transform child in yearContainer)
+            {
+                var block = child.GetComponent<MonthBlock>();
+                if (block != null) block.ApplySizing(); 
+            }
+            
             // Show the UI
             if (mainCanvasGroup != null) mainCanvasGroup.alpha = 1;
             _isRelayouting = false;

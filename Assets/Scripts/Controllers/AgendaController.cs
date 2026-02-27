@@ -28,6 +28,8 @@ namespace LocalCalendar.Controllers
         [SerializeField] SidePanelPopover sideMenuPopover;
 
         [Header("Layout")]
+        [SerializeField] RectTransform staticEventsContainer; // The row itself
+        [SerializeField] RectTransform staticEventsContent;   // The VLG child that holds items
         [SerializeField] RectTransform contentRoot;
         [SerializeField] RectTransform timeGrid;
         [SerializeField] RectTransform itemsLayer;
@@ -44,6 +46,7 @@ namespace LocalCalendar.Controllers
         private CalendarRepository _repo;
         private DateTime _visibleDate;
         private float _nextUpdate;
+        private List<LayoutItem> _staticItems;
         private List<LayoutItem> _layoutItems;
 
         const float HourHeight = 250f;
@@ -177,16 +180,14 @@ namespace LocalCalendar.Controllers
 
         IEnumerator RelayoutRoutine()
         {
-            itemsLayer.gameObject.SetActive(false);
-
-            yield return null;
+            yield return new WaitForEndOfFrame();
+            staticEventsContainer.gameObject.SetActive(false);
             Canvas.ForceUpdateCanvases();
             yield return null;
 
+            LayoutStaticItems(_staticItems);
             LayoutItems(_layoutItems);
             UpdateNowIndicator();
-
-            itemsLayer.gameObject.SetActive(true);
         }
 
         private void Refresh()
@@ -199,11 +200,11 @@ namespace LocalCalendar.Controllers
         {
             ClearItems();
 
-            header.title.text = _visibleDate.ToString("dddd, MMM d");
+            header.title.text = _visibleDate.ToString("ddd, MMM d, yyyy");
             header.currentDate = _visibleDate;
 
             // Hide layer to avoid flash
-            itemsLayer.gameObject.SetActive(false);
+            //itemsLayer.gameObject.SetActive(false);
 
             // Wait for layout system
             yield return null;
@@ -213,10 +214,17 @@ namespace LocalCalendar.Controllers
             var items = CalendarUtils.GetExpandedDayItems(_repo, _visibleDate);
 
             _layoutItems = new List<LayoutItem>();
+            _staticItems = new List<LayoutItem>();
 
             foreach (var (item, start) in items)
             {
-                var view = Instantiate(agendaItemPrefab, itemsLayer);
+                // Determine if it is a static event
+                bool isMultiDay = (item.EndUtc - item.StartUtc).TotalDays >= 1.0;
+                bool isStatic = item.AllDay || isMultiDay;
+
+                // Instantiate in the correct parent
+                RectTransform parent = isStatic ? staticEventsContent : itemsLayer;
+                var view = Instantiate(agendaItemPrefab, parent);
                 _spawned.Add(view.gameObject);
 
                 var end = CalendarUtils.GetOccurrenceEnd(item, start);
@@ -225,20 +233,60 @@ namespace LocalCalendar.Controllers
 
                 view.Bind(item, OnItemTapped);
 
-                _layoutItems.Add(new LayoutItem
-                {
-                    item = item,
-                    start = start,
-                    end = end,
-                    view = view
-                });
+                var layoutItem = new LayoutItem { item = item,
+                                                  start = start,
+                                                  end = end,
+                                                  view = view };
+                if (isStatic)
+                    _staticItems.Add(layoutItem);
+                else
+                    _layoutItems.Add(layoutItem);
             }
 
+            LayoutStaticItems(_staticItems);
             LayoutItems(_layoutItems);
             UpdateNowIndicator();
 
             // Show after positioned
-            itemsLayer.gameObject.SetActive(true);
+            //itemsLayer.gameObject.SetActive(true);
+        }
+
+        private void LayoutStaticItems(List<LayoutItem> staticItems)
+        {
+            if (staticItems == null || staticItems.Count == 0)
+            {
+                staticEventsContainer.gameObject.SetActive(false);
+                return;
+            }
+
+            staticEventsContainer.gameObject.SetActive(true);
+
+            float spacing = staticEventsContent.GetComponent<VerticalLayoutGroup>().spacing;
+            float totalHeight = (staticItems.Count * MinItemHeight) + (Mathf.Max(0, staticItems.Count - 1) * spacing);
+
+            var containerLE = staticEventsContainer.GetComponent<LayoutElement>();
+            if (containerLE != null)
+            {
+                containerLE.preferredHeight = totalHeight;
+            }
+
+            foreach (var item in staticItems)
+            {
+                var rt = item.view.GetComponent<RectTransform>();
+                // Ensure anchors are set to stretch horizontally
+                rt.anchorMin = new Vector2(0, 0);
+                rt.anchorMax = new Vector2(1, 1);
+        
+                var le = item.view.GetComponent<LayoutElement>() ?? item.view.gameObject.AddComponent<LayoutElement>();
+                le.preferredHeight = MinItemHeight;
+                le.flexibleWidth = 1;
+            }
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(staticEventsContent);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(staticEventsContainer);
+    
+            var mainVLG = staticEventsContainer.parent.GetComponent<RectTransform>();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(mainVLG);
         }
 
         private void LayoutItems(List<LayoutItem> items)
@@ -328,7 +376,7 @@ namespace LocalCalendar.Controllers
 
             foreach (var item in group)
             {
-                // 1) Build local overlap set for THIS item
+                // Build local overlap set for THIS item
                 var local = new List<LayoutItem>();
 
                 foreach (var other in group)
@@ -340,7 +388,7 @@ namespace LocalCalendar.Controllers
                 // Sort local overlaps by start time
                 local.Sort((a, b) => a.start.CompareTo(b.start));
 
-                // 2) Pack local overlaps into columns
+                // Pack local overlaps into columns
                 var columns = new List<List<LayoutItem>>();
 
                 foreach (var l in local)
@@ -367,7 +415,7 @@ namespace LocalCalendar.Controllers
 
                 int colCount = columns.Count;
 
-                // 3) Find THIS item's local column
+                // Find THIS item's local column
                 int myCol = 0;
 
                 for (int c = 0; c < columns.Count; c++)
@@ -379,7 +427,7 @@ namespace LocalCalendar.Controllers
                     }
                 }
 
-                // 4) Apply layout using local column info
+                // Apply layout using local column info
                 ApplyLayout(item, myCol, colCount);
             }
         }

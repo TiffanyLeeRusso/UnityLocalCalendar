@@ -390,6 +390,9 @@ namespace LocalCalendar.Controllers
             {
                 titleInput.readOnly = true;
                 noteInput.readOnly = true;
+                // Wrap links for the preview (if links exist)
+                titleInput.text = TMPUtils.Linkify(_item.Title);
+                noteInput.text = TMPUtils.Linkify(_item.Note);
                 titleDecoration.SetActive(false);
                 noteDecoration.SetActive(false);
                 titleInput.gameObject.SetActive(titleInput.text.Length > 0);

@@ -147,7 +147,7 @@ namespace LocalCalendar.Controllers
                                              _currentMonth.Month,
                                              1);
 
-            header.title.text = _currentMonth.ToString("MMMM yyyy");
+            header.title.text = _currentMonth.ToString("MMM yyyy");
             header.currentDate = (_currentMonth.Year == DateTime.Today.Year && _currentMonth.Month == DateTime.Today.Month) ?
                 DateTime.Today :
                 firstDay; // Today if we are on the current month; otherwise, the first of the month
