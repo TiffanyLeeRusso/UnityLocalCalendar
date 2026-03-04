@@ -436,7 +436,8 @@ namespace LocalCalendar.Controllers
                 allDayToggle.gameObject.SetActive(false);
                 timePickerContainer.SetActive(false);
                 timeText.gameObject.SetActive(true);
-                timeText.text = allDay ? "All day" : $"{startLocal:hh:mm tt} – {endLocal:hh:mm tt}";
+                //timeText.text = allDay ? "All day" : $"{startLocal:hh:mm tt} – {endLocal:hh:mm tt}";
+                timeText.text = allDay ? "All day" : $"{AppUtils.FormatTime(startLocal)} – {AppUtils.FormatTime(endLocal)}";
             }
 
             nowBtn.SetActive(EditItemContext.Mode == EditItemMode.Edit);

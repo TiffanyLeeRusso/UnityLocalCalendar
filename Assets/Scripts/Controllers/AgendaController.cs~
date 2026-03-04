@@ -26,7 +26,6 @@ namespace LocalCalendar.Controllers
         [Header("UI")]
         [SerializeField] Header header;
         [SerializeField] SidePanelPopover sideMenuPopover;
-        [SerializeField] GameObject nowCat;
 
         [Header("Layout")]
         [SerializeField] RectTransform staticEventsContainer; // The row itself
@@ -67,9 +66,7 @@ namespace LocalCalendar.Controllers
         void Start()
         {
             _repo = new CalendarRepository();
-            _visibleDate = DateContext.CurrentShownDay;
-
-            nowCat.SetActive(SettingsService.GetCatsActive());
+            _visibleDate = DateContext.CurrentShownDay;//DateTime.Today;
 
             header.Configure(new HeaderConfig{ SideMenuPopover = sideMenuPopover,
                                                ShowToday = true });
@@ -155,6 +152,7 @@ namespace LocalCalendar.Controllers
             nowIndicator.gameObject.SetActive(true);
 
             var now = DateTime.Now;
+
             nowTimeLabel.text = AppUtils.FormatTime(now);
 
             float y = (float)now.TimeOfDay.TotalHours * HourHeight;

@@ -20,6 +20,7 @@ namespace LocalCalendar.Controllers
         [SerializeField] private CanvasGroup permissionsGroup; // for the fade effect to show something happened
         [SerializeField] private Toggle twentyFourHrToggle;
         [SerializeField] private Toggle monWeekStartToggle;
+        [SerializeField] private Toggle catToggle;
         [SerializeField] private CanvasGroup importExportStatusGroup; // for the fade effect to show something happened
         [SerializeField] private TMP_Text importExportStatusText;
 
@@ -103,18 +104,22 @@ namespace LocalCalendar.Controllers
             // --- Load values ---
             bool use24h = SettingsService.GetUse24HourTime();
             bool weekMon = SettingsService.GetWeekStartMonday();
+            bool catsActive = SettingsService.GetCatsActive();
 
             // Prevent callbacks while assigning
             twentyFourHrToggle.SetIsOnWithoutNotify(use24h);
             monWeekStartToggle.SetIsOnWithoutNotify(weekMon);
+            catToggle.SetIsOnWithoutNotify(catsActive);
 
             // Clear old listeners
             twentyFourHrToggle.onValueChanged.RemoveAllListeners();
             monWeekStartToggle.onValueChanged.RemoveAllListeners();
+            catToggle.onValueChanged.RemoveAllListeners();
 
             // --- Bind ---
             twentyFourHrToggle.onValueChanged.AddListener(On24HourToggleChanged);
             monWeekStartToggle.onValueChanged.AddListener(OnWeekStartToggleChanged);
+            catToggle.onValueChanged.AddListener(OnCatToggleChanged);
         }
 
         private void On24HourToggleChanged(bool value)
@@ -125,6 +130,11 @@ namespace LocalCalendar.Controllers
         private void OnWeekStartToggleChanged(bool value)
         {
             SettingsService.SetWeekStartMonday(value);
+        }
+
+        private void OnCatToggleChanged(bool value)
+        {
+            SettingsService.SetCatsActive(value);
         }
 
         // --- Import/Export ---

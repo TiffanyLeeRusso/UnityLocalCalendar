@@ -51,8 +51,7 @@ namespace LocalCalendar.Services
             return date.ToString("yyyy-MM-dd");
         }
 
-        // Formats a date + time string based on user settings.
-        // Year not included
+        // Formats a full date + time string based on user settings.
         public static string FormatDateTime(DateTime time)
         {
             bool use24 = SettingsService.GetUse24HourTime();
@@ -62,19 +61,6 @@ namespace LocalCalendar.Services
                 : time.ToString("h:mm tt");
 
             return $"{time:ddd, MMM d} {timePart}";
-        }
-
-        // Formats a full date + time string based on user settings.
-        // Year included
-        public static string FormatFullDateTime(DateTime time)
-        {
-            bool use24 = SettingsService.GetUse24HourTime();
-
-            string timePart = use24
-                ? time.ToString("HH:mm")
-                : time.ToString("h:mm tt");
-
-            return $"{time:ddd, MMM d, yyyy} {timePart}";
         }
     }
 }

@@ -17,6 +17,7 @@ namespace LocalCalendar.Controllers
         [SerializeField] private DayEventRow itemRowPrefab;
         [SerializeField] private RectTransform paddingPrefab;
         [SerializeField] private SidePanelPopover sideMenuPopover;
+        [SerializeField] GameObject catObj;
 
         void OnEnable()
         {
@@ -33,6 +34,8 @@ namespace LocalCalendar.Controllers
                                                SceneTitle = "Schedule"});
             header.OnPrev += PrevMonth;
             header.OnNext += NextMonth;
+
+            catObj.SetActive(SettingsService.GetCatsActive());
 
             BuildSchedule();
         }
