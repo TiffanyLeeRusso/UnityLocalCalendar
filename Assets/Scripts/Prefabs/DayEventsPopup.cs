@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine;
 using LocalCalendar.Data;
 using LocalCalendar.Services;
+using LocalCalendar.Utils;
 
 namespace LocalCalendar.Prefabs
 {
@@ -65,6 +66,8 @@ namespace LocalCalendar.Prefabs
             {
                 var row = Instantiate(rowPrefab, content);
                 row.Initialize(item.item, item.occurrenceStart, OnItemClicked, _currentDate);
+                var visuals = row.GetComponent<CalendarItemVisuals>();
+                visuals.ApplyStyle(item.item.Color);
             }
         }
 

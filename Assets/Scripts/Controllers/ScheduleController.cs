@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine;
 using LocalCalendar.Data;
 using LocalCalendar.Services;
+using LocalCalendar.Utils;
 using LocalCalendar.Prefabs;
 
 namespace LocalCalendar.Controllers
@@ -100,6 +101,8 @@ namespace LocalCalendar.Controllers
                 {
                     var row = Instantiate(itemRowPrefab, content);
                     row.Initialize(entry.item, entry.occurrenceStart, OnItemClicked, groupItem.Key);
+                    var visuals = row.GetComponent<CalendarItemVisuals>();
+                    visuals.ApplyStyle(entry.item.Color);
                     Instantiate(paddingPrefab, content);
                 }
             }

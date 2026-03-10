@@ -6,6 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using LocalCalendar.Data;
 using LocalCalendar.Services;
+using LocalCalendar.Utils;
 using LocalCalendar.Prefabs;
 
 namespace LocalCalendar.Controllers
@@ -227,6 +228,8 @@ namespace LocalCalendar.Controllers
                 // Instantiate in the correct parent
                 RectTransform parent = isStatic ? staticEventsContent : itemsLayer;
                 var view = Instantiate(agendaItemPrefab, parent);
+                var visuals = view.GetComponent<CalendarItemVisuals>();
+                visuals.ApplyStyle(item.Color);
                 _spawned.Add(view.gameObject);
 
                 var end = CalendarUtils.GetOccurrenceEnd(item, start);

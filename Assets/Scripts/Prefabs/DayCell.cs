@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using LocalCalendar.Data;
+using LocalCalendar.Utils;
 
 namespace LocalCalendar.Prefabs
 {
@@ -66,6 +67,8 @@ namespace LocalCalendar.Prefabs
             {
                 var row = Instantiate(dayEventRowPrefab, eventsContainer);
                 row.Initialize(item.item, item.occurrenceStart, _onItemClicked, _date, DayEventRow.ViewMode.Compact);
+                var visuals = row.GetComponent<CalendarItemVisuals>();
+                visuals.ApplyStyle(item.item.Color);
             }
 
             LayoutRebuilder.ForceRebuildLayoutImmediate(eventsContainer);

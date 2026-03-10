@@ -6,6 +6,7 @@ using System.Collections;
 using LocalCalendar.Data;
 using LocalCalendar.Notifications;
 using LocalCalendar.Services;
+using LocalCalendar.Utils;
 using LocalCalendar.AppDebug;
 
 namespace LocalCalendar.App

@@ -5,34 +5,46 @@ using TMPro;
 using LocalCalendar.Data;
 using LocalCalendar.Notifications;
 using LocalCalendar.Services;
+using LocalCalendar.Utils;
 using LocalCalendar.Prefabs;
 
 namespace LocalCalendar.Controllers
 {
     public class EditItemController : MonoBehaviour
     {
+        [Header("Title/Note Inputs")]
         [SerializeField] private TMP_InputField titleInput;
         [SerializeField] private GameObject titleDecoration;
         [SerializeField] private TMP_InputField noteInput;
         [SerializeField] private GameObject noteDecoration;
 
+        [Header("DateTime Helpers")]
         [SerializeField] private Toggle allDayToggle;
         [SerializeField] private GameObject nowBtn;
+
+        [Header("Date Selection")]
         [SerializeField] private TMP_Text startDateText;
         [SerializeField] private DatePicker startDatePicker;
         [SerializeField] private TMP_Text endDateText;
         [SerializeField] private DatePicker endDatePicker;
 
+        [Header("Time Selection")]
         [SerializeField] private TMP_Text timeText;
         [SerializeField] private GameObject timePickerContainer;
         [SerializeField] private TimePicker startTimePicker;
         [SerializeField] private TimePicker endTimePicker;
 
+        [Header("Color Selection")]
+        [SerializeField] private GameObject colorContainer;
+        [SerializeField] private Toggle[] colorToggles;
+
+        [Header("Reminder Selection")]
         [SerializeField] private TMP_Text reminderText;
         [SerializeField] private Toggle reminderToggle;
         [SerializeField] private GameObject reminderContainer;
         [SerializeField] private TMP_Dropdown reminderDropdown;
 
+        [Header("Repeat Selection")]
         [SerializeField] private TMP_Text repeatText;
         [SerializeField] private Toggle repeatToggle;
         [SerializeField] private TMP_Dropdown repeatUnitDropdown;
@@ -42,6 +54,7 @@ namespace LocalCalendar.Controllers
         [SerializeField] private TMP_Text repeatUntilLabel;
         [SerializeField] private GameObject repeatContainer;
 
+        [Header("Buttons")]
         [SerializeField] private GameObject editBtns;
         [SerializeField] private GameObject previewBtns;
         [SerializeField] private GameObject deleteButton;
@@ -444,6 +457,38 @@ namespace LocalCalendar.Controllers
             startDatePicker.gameObject.SetActive(EditItemContext.Mode == EditItemMode.Edit);
             endDatePicker.gameObject.SetActive(EditItemContext.Mode == EditItemMode.Edit);
 
+            // Color Logic
+            int colorIndex = (int)_item.Color;
+            if (EditItemContext.Mode == EditItemMode.Edit)
+            {
+                // edit mode: Show all buttons and select the current one
+                for (int i = 0; i < colorToggles.Length; i++)
+                {
+                    colorToggles[i].gameObject.SetActive(true);
+                    colorToggles[i].interactable = true;
+                    if (i == colorIndex) 
+                    {
+                        colorToggles[i].isOn = true;
+                    }
+                }
+            }
+            else 
+            {
+                // preview mode: Only show the button matching the item's color
+                for (int i = 0; i < colorToggles.Length; i++)
+                {
+                    bool isCurrentColor = (i == colorIndex);
+                    colorToggles[i].gameObject.SetActive(isCurrentColor);
+        
+                    if (isCurrentColor)
+                    {
+                        colorToggles[i].isOn = true;
+                        // Disable interactivity
+                        colorToggles[i].interactable = false; 
+                    }
+                }
+            }
+
             // Reminder
             bool isReminder = _item.Reminder != null;
             if (EditItemContext.Mode == EditItemMode.Edit)
@@ -551,6 +596,17 @@ namespace LocalCalendar.Controllers
                     endLocal = startLocal.AddMinutes(5);
             }
 
+            // Find which toggle is on
+            CalendarItemColor selectedColor = CalendarItemColor.Transparent;
+            for (int i = 0; i < colorToggles.Length; i++)
+            {
+                if (colorToggles[i].isOn)
+                {
+                    selectedColor = (CalendarItemColor)i;
+                    break;
+                }
+            }
+
             var item = new CalendarItem
             {
                 Id = _item?.Id ?? Guid.NewGuid().ToString(),
@@ -564,6 +620,7 @@ namespace LocalCalendar.Controllers
                 StartUtc = startLocal.ToUniversalTime(),
                 EndUtc = endLocal.ToUniversalTime(),
                 AllDay = allDayToggle.isOn,
+                Color = selectedColor,
                 RepeatRule = BuildRepeatRule()
             };
 

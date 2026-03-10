@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 using TMPro;
 using LocalCalendar.Prefabs;
 using LocalCalendar.Data;
+using LocalCalendar.Utils;
 
 namespace LocalCalendar.Services
 {
@@ -107,6 +108,8 @@ namespace LocalCalendar.Services
         private void AddResult(CalendarItem item)
         {
             var row = Instantiate(resultPrefab, searchResults);
+            var visuals = row.GetComponent<CalendarItemVisuals>();
+            visuals.ApplyStyle(item.Color);
 
             DateTime occurrenceStart = item.StartUtc.ToLocalTime();
 
