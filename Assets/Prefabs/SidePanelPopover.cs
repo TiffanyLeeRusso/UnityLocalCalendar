@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 using TMPro;
 using LocalCalendar.Prefabs;
 using LocalCalendar.Data;
+using LocalCalendar.Utils;
 
 namespace LocalCalendar.Services
 {
@@ -16,6 +17,7 @@ namespace LocalCalendar.Services
         [SerializeField] private RectTransform searchResults;
         [SerializeField] private DayEventRow resultPrefab;
         [SerializeField] private TMP_Text noResultsLabel;
+        [SerializeField] GameObject catObj;
 
         const int MAX_SEARCH_RESULTS = 20;
         private CalendarRepository _repo;
@@ -28,6 +30,8 @@ namespace LocalCalendar.Services
         {
             _repo = new CalendarRepository();
             searchInput.onValueChanged.AddListener(OnSearchChanged);
+
+            catObj.SetActive(SettingsService.GetCatsActive());
         }
 
         // --- Buttons ---
@@ -96,29 +100,26 @@ namespace LocalCalendar.Services
         private void OnSearchChanged(string text)
         {
             ClearResults();
-
-            if (string.IsNullOrWhiteSpace(text))
-                return;
-
+            if (string.IsNullOrWhiteSpace(text)) return;
             var results = _repo.Search(text).Take(MAX_SEARCH_RESULTS).ToList();
-
-            foreach (var item in results)
-                AddResult(item);
-        }
-        */
+            foreach (var item in results) AddResult(item);
+        }*/
 
         private void AddResult(CalendarItem item)
         {
             var row = Instantiate(resultPrefab, searchResults);
+            var visuals = row.GetComponent<CalendarItemVisuals>();
+            visuals.ApplyStyle(item.Color);
 
-            DateTime occurrenceStart = item.StartUtc;
+            DateTime occurrenceStart = item.StartUtc.ToLocalTime();
 
             row.Initialize(
                 item,
                 occurrenceStart,
                 args => OpenItem(args.item),
                 occurrenceStart,
-                DayEventRow.ViewMode.Compact
+                DayEventRow.ViewMode.Full,
+                DayEventRow.TimeView.Date
             );
 
             _resultItems.Add(row);

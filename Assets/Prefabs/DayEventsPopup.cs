@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine;
 using LocalCalendar.Data;
 using LocalCalendar.Services;
+using LocalCalendar.Utils;
 
 namespace LocalCalendar.Prefabs
 {
@@ -51,7 +52,7 @@ namespace LocalCalendar.Prefabs
         private void SetDate(DateTime date)
         {
             _currentDate = date.Date;
-            header.title.text = _currentDate.ToString("dddd, MMM d");
+            header.title.text = _currentDate.ToString("ddd, MMM d, yyyy");
             header.currentDate = _currentDate;
             LoadEvents();
         }
@@ -65,6 +66,8 @@ namespace LocalCalendar.Prefabs
             {
                 var row = Instantiate(rowPrefab, content);
                 row.Initialize(item.item, item.occurrenceStart, OnItemClicked, _currentDate);
+                var visuals = row.GetComponent<CalendarItemVisuals>();
+                visuals.ApplyStyle(item.item.Color);
             }
         }
 

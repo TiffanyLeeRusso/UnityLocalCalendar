@@ -7,6 +7,7 @@ namespace LocalCalendar.Services
     {
         private const string Use24HourKey   = "settings_use_24h";
         private const string WeekStartMonKey = "settings_week_start_mon";
+        private const string CatsActiveKey = "cats_active";
 
         // --- 24 Hour Time ---
 
@@ -31,6 +32,19 @@ namespace LocalCalendar.Services
         public static void SetWeekStartMonday(bool value)
         {
             PlayerPrefs.SetInt(WeekStartMonKey, value ? 1 : 0);
+            PlayerPrefs.Save();
+        }
+
+        // --- Cats ---
+
+        public static bool GetCatsActive()
+        {
+            return PlayerPrefs.GetInt(CatsActiveKey, 0) == 1;
+        }
+
+        public static void SetCatsActive(bool value)
+        {
+            PlayerPrefs.SetInt(CatsActiveKey, value ? 1 : 0);
             PlayerPrefs.Save();
         }
 
