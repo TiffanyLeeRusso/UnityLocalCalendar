@@ -216,7 +216,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 60cfd84ae231a4943b3f0f6cf0dcf409, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 28c51f93b6260224c867f45f411a0e85, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -252,10 +252,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9cd7f8fff0ea7d34d861c5fc16922b49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LocalCalendar.Utils.CalendarItemVisuals
-  styleConfig: {fileID: 11400000, guid: 58e97677ba45635499ca28a0d7729ba4, type: 2}
+  styleConfig: {fileID: 11400000, guid: d73792f0d4bf38449986a3add5c2b715, type: 2}
   backgroundImage: {fileID: 585751955759204563}
   textComponents:
   - {fileID: 9040019777359445033}
+  iconComponents: []
 --- !u!1001 &3882885868945931848
 PrefabInstance:
   m_ObjectHideFlags: 0
