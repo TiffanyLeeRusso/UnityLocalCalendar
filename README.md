@@ -124,8 +124,9 @@ Expansion always happens at query time, not at storage time.
 
 
 ### Possible Future Improvements / Known Issues
-* The text inputs do not support copy & paste.
-* Time zone switching.
+* Time-zone switching.
 * Week view
+* Settings: big-text mode & themes
 * UX niceties like multi-day bars in month grid, event colors, day and/or event emojis or stickers.
+* Holidays
 
