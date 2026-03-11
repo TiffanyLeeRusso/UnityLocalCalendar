@@ -35,30 +35,14 @@ namespace LocalCalendar.Utils
             foreach (var txt in textComponents)
             {
                 if (txt == null) continue;
-
-                if (style.isTransparent)
-                {
-                    txt.color = AppUtils.FromHex(AppUtils.DARK_BG_TEXT_COLOR);
-                }
-                else
-                {
-                    txt.color = AppUtils.FromHex(AppUtils.LIGHT_BG_TEXT_COLOR);
-                }
+                txt.color = style.textColor;
             }
 
             // Style all icon objects
             foreach (var img in iconComponents)
             {
                 if (img == null) continue;
-
-                if (style.isTransparent)
-                {
-                    img.color = AppUtils.FromHex(AppUtils.DARK_BG_TEXT_COLOR);
-                }
-                else
-                {
-                    img.color = AppUtils.FromHex(AppUtils.LIGHT_BG_TEXT_COLOR);
-                }
+                img.color = style.textColor;
             }
         }
     }
