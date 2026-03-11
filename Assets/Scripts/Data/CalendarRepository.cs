@@ -25,7 +25,8 @@ namespace LocalCalendar.Data
                     Note = item.Note,
                     StartUtcTicks = item.StartUtc.Ticks,
                     EndUtcTicks = item.EndUtc.Ticks,
-                    AllDay = item.AllDay ? 1 : 0
+                    AllDay = item.AllDay ? 1 : 0,
+                    Color = (int)item.Color
                 });
 
                 db.Delete<RepeatRuleRow>(item.Id);
@@ -136,6 +137,7 @@ namespace LocalCalendar.Data
                 StartUtc = new DateTime(row.StartUtcTicks, DateTimeKind.Utc),
                 EndUtc = new DateTime(row.EndUtcTicks, DateTimeKind.Utc),
                 AllDay = row.AllDay == 1,
+                Color = (CalendarItemColor)row.Color,
                 Reminder = reminder,
                 RepeatRule = repeatRule
             };
@@ -265,42 +267,9 @@ namespace LocalCalendar.Data
             var row = Database.Connection.Find<CalendarItemRow>(id);
             if (row == null) return null;
 
-            var item = new CalendarItem
-            {
-                Id = row.Id,
-                Title = row.Title,
-                Note = row.Note,
-                Type = (CalendarItemType)row.Type,
-                StartUtc = new DateTime(row.StartUtcTicks, DateTimeKind.Utc),
-                EndUtc = new DateTime(row.EndUtcTicks, DateTimeKind.Utc),
-                AllDay = row.AllDay == 1
-            };
-            
-            // Reminder
             var reminder = Database.Connection.Find<ReminderRow>(id);
-            if (reminder != null)
-            {
-                item.Reminder = new ReminderSettings
-                {
-                    Offset = TimeSpan.FromSeconds(reminder.OffsetSeconds)
-                };
-            }
-
-            // Repeat
             var repeat = Database.Connection.Find<RepeatRuleRow>(id);
-            if (repeat != null)
-            {
-                item.RepeatRule = new RepeatRule
-                {
-                    Interval = repeat.Interval,
-                    Unit = (RepeatUnit)repeat.Unit,
-                    UntilUtc = repeat.UntilUtcTicks.HasValue
-                    ? new DateTime(repeat.UntilUtcTicks.Value, DateTimeKind.Utc)
-                    : null
-                };
-            }
-
-            return item;
+            return BuildItem(row, reminder, repeat);
         }
 
         // --- Debug ---
@@ -364,6 +333,7 @@ namespace LocalCalendar.Data
                 sb.AppendLine($"Start: {item.StartUtc:u}");
                 sb.AppendLine($"End:   {item.EndUtc:u}");
                 sb.AppendLine($"AllDay: {item.AllDay}");
+                sb.AppendLine($"Color: {item.Color}");
 
                 if (entry.Reminder != null)
                 {

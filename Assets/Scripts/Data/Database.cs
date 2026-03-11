@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using SQLite;
 using UnityEngine;
 using LocalCalendar.Models;
@@ -53,6 +54,7 @@ namespace LocalCalendar.Data
             try 
             {
                 _connection = new SQLiteConnection(DB_PATH);
+                RunMigrations(_connection);
         
                 // We use a query that ignores the return value to avoid the 
                 // library's internal "not an error" exception mapping.
@@ -108,6 +110,40 @@ namespace LocalCalendar.Data
             // Final safety: Delete orphaned journal files manually if they persist
             if (File.Exists(DB_PATH + "-wal")) File.Delete(DB_PATH + "-wal");
             if (File.Exists(DB_PATH + "-shm")) File.Delete(DB_PATH + "-shm");
+        }
+
+        // --- DB migrations ---
+
+        public static void RunMigrations(SQLiteConnection db)
+        {
+            // Get current version (starts at 0 for new databases)
+            int currentVersion = db.ExecuteScalar<int>("PRAGMA user_version;");
+
+            // Step through updates
+            // Version 1: Added Color column to CalendarItemRow
+            if (currentVersion < 1)
+            {
+                try 
+                {
+                    // Check if column already exists (safeguard)
+                    var tableInfo = db.GetTableInfo("CalendarItemRow");
+                    if (!tableInfo.Any(c => c.Name == "Color"))
+                    {
+                        // Add the column.
+                        db.Execute("ALTER TABLE CalendarItemRow ADD COLUMN Color INTEGER DEFAULT 0;");
+                    }
+
+                    // Update version so we don't run this schema update again
+                    db.Execute("PRAGMA user_version = 1;");
+                    LoggingService.Info(LogCategory.DB, "DB migrated to version 1 (Color column added).");
+                }
+                catch (Exception ex)
+                {
+                    LoggingService.Error(LogCategory.DB, $"DB Migration failed: {ex.Message}");
+                }
+            }
+    
+            // Version 2: (Add more if blocks here in the future)
         }
 
         // --- Import/export functions ---

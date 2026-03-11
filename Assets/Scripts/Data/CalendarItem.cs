@@ -9,6 +9,15 @@ namespace LocalCalendar.Data
         Reminder = 1
     }
 
+    public enum CalendarItemColor
+    {
+        Transparent = 0,
+        Blue = 1,
+        Green = 2,
+        Amber = 3,
+        Rose = 4
+    }
+
     [Serializable]
     public class CalendarItem
     {
@@ -22,6 +31,8 @@ namespace LocalCalendar.Data
         public DateTime EndUtc;
 
         public bool AllDay;
+
+        public CalendarItemColor Color;
 
         public ReminderSettings Reminder;
         public RepeatRule RepeatRule;
@@ -37,6 +48,7 @@ namespace LocalCalendar.Data
                 StartUtc = StartUtc,
                 EndUtc = EndUtc,
                 AllDay = AllDay,
+                Color = Color,
                 Reminder = Reminder?.Clone(),
                 RepeatRule = RepeatRule?.Clone()
             };

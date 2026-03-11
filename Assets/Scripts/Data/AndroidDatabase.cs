@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using UnityEngine;
-//using LocalCalendar.Models;
+using SQLite;
 using LocalCalendar.Services;
 
 namespace LocalCalendar.Data
@@ -133,6 +133,26 @@ namespace LocalCalendar.Data
                 // 2. DB Validation
                 if (Database.IsValidDatabase(tempPath))
                 {
+                    // Run DB migrations if necessary
+                    try 
+                    {
+                        // Open a temporary connection to the temp file
+                        using (var tempConn = new SQLiteConnection(tempPath))
+                        {
+                            LoggingService.Info(LogCategory.DB, "Running migrations on imported file...");
+                            Database.RunMigrations(tempConn);
+                            tempConn.Close();
+                        }
+                    }
+                    catch (Exception migEx)
+                    {
+                        LoggingService.Error(LogCategory.DB, "Import failed during migration: " + migEx.Message);
+                        Database.NotifyImportResult(ImportResult.Error);
+                        return; // Stop the import if migration fails
+                    }
+
+                    // Swap the DB
+
                     // Close the current DB before swapping
                     Database.ShutdownForFileAccess(); // Ensure current file isn't locked
                     // Give the OS a moment to release the file lock
