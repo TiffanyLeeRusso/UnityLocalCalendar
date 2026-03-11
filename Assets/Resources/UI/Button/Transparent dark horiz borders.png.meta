@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: e72019ccb505a5348bddc78f27ee5c10
+guid: e98f0e5700a3bcc4eb7398c0e81f2d0d
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 4725901260540857811
-    second: Transparent dark_0
+      213: -5221573336495124197
+    second: Transparent dark horiz borders_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,7 +113,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Transparent dark_0
+      name: Transparent dark horiz borders_0
       rect:
         serializedVersion: 2
         x: 0
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3ddcb165826c59140800000000000000
-      internalID: 4725901260540857811
+      spriteID: b119e8d27be3987b0800000000000000
+      internalID: -5221573336495124197
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Transparent dark_0: 4725901260540857811
+      Transparent dark horiz borders_0: -5221573336495124197
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
