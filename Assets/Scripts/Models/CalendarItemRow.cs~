@@ -17,7 +17,5 @@ namespace LocalCalendar.Models
         public long EndUtcTicks { get; set; }
 
         public int AllDay { get; set; }
-
-        public int Color { get; set; }
     }
 }
