@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6954a57041a40345ae08aa5ee93888f, type: 3}
+  m_Name: CalendarStyleConfigCompact
+  m_EditorClassIdentifier: Assembly-CSharp::LocalCalendar.Utils.CalendarStyleConfig
+  styles:
+  - colorType: 0
+    backgroundSprite: {fileID: 0}
+    textColor: {r: 0.9411765, g: 0.9411765, b: 0.972549, a: 1}
+    isTransparent: 1
+  - colorType: 1
+    backgroundSprite: {fileID: -787650734362397313, guid: 9786ca5a9be0f56498164781dd948f1f, type: 3}
+    textColor: {r: 0.06666667, g: 0.06666667, b: 0.13333334, a: 1}
+    isTransparent: 0
+  - colorType: 2
+    backgroundSprite: {fileID: 6878933256637529767, guid: 33fded48842e9a049a986ec0415b60a5, type: 3}
+    textColor: {r: 0.06666667, g: 0.06666667, b: 0.13333334, a: 1}
+    isTransparent: 0
+  - colorType: 3
+    backgroundSprite: {fileID: -9164922688683409299, guid: 6d9142c01b45f4840ba128ffa08008e6, type: 3}
+    textColor: {r: 0.06666667, g: 0.06666667, b: 0.13333334, a: 1}
+    isTransparent: 0
+  - colorType: 4
+    backgroundSprite: {fileID: 1345891316952868922, guid: ae3dd21031bf96148895d7772b86d651, type: 3}
+    textColor: {r: 0.06666667, g: 0.06666667, b: 0.13333334, a: 1}
+    isTransparent: 0

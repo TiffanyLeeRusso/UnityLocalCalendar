@@ -1,0 +1,658 @@
+using System;
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+using LocalCalendar.Data;
+using LocalCalendar.Notifications;
+using LocalCalendar.Services;
+using LocalCalendar.Utils;
+using LocalCalendar.Prefabs;
+
+namespace LocalCalendar.Controllers
+{
+    public class EditItemController : MonoBehaviour
+    {
+        [Header("Title/Note Inputs")]
+        [SerializeField] private TMP_InputField titleInput;
+        [SerializeField] private GameObject titleDecoration;
+        [SerializeField] private TMP_InputField noteInput;
+        [SerializeField] private GameObject noteDecoration;
+
+        [Header("DateTime Helpers")]
+        [SerializeField] private Toggle allDayToggle;
+        [SerializeField] private GameObject nowBtn;
+
+        [Header("Date Selection")]
+        [SerializeField] private TMP_Text startDateText;
+        [SerializeField] private DatePicker startDatePicker;
+        [SerializeField] private TMP_Text endDateText;
+        [SerializeField] private DatePicker endDatePicker;
+
+        [Header("Time Selection")]
+        [SerializeField] private TMP_Text timeText;
+        [SerializeField] private GameObject timePickerContainer;
+        [SerializeField] private TimePicker startTimePicker;
+        [SerializeField] private TimePicker endTimePicker;
+
+        [Header("Color Selection")]
+        [SerializeField] private GameObject colorContainer;
+        [SerializeField] private Toggle[] colorToggles;
+
+        [Header("Reminder Selection")]
+        [SerializeField] private TMP_Text reminderText;
+        [SerializeField] private Toggle reminderToggle;
+        [SerializeField] private GameObject reminderContainer;
+        [SerializeField] private TMP_Dropdown reminderDropdown;
+
+        [Header("Repeat Selection")]
+        [SerializeField] private TMP_Text repeatText;
+        [SerializeField] private Toggle repeatToggle;
+        [SerializeField] private TMP_Dropdown repeatUnitDropdown;
+        [SerializeField] private TMP_InputField repeatIntervalInput;
+        [SerializeField] private Toggle repeatForeverToggle;
+        [SerializeField] private DatePicker repeatUntilDatePicker;
+        [SerializeField] private TMP_Text repeatUntilLabel;
+        [SerializeField] private GameObject repeatContainer;
+
+        [Header("Buttons")]
+        [SerializeField] private GameObject editBtns;
+        [SerializeField] private GameObject previewBtns;
+        [SerializeField] private GameObject deleteButton;
+
+        private CalendarRepository _repo;
+        private CalendarItem _item;
+        private CalendarItem _originalItem; // copy of orig for edit case
+        private bool _suppressTimeEvents;
+        private TimeSpan _lastDuration = TimeSpan.FromHours(1);
+        private DateTime _startDate;
+        private DateTime _endDate;
+
+        static readonly TimeSpan[] ReminderOffsets =
+        {
+            TimeSpan.Zero,
+            TimeSpan.FromMinutes(10),
+            TimeSpan.FromHours(1),
+            TimeSpan.FromDays(1)
+        };
+
+        void Start()
+        {
+            _repo = new CalendarRepository();
+
+            // Change events
+            startDatePicker.OnDateChanged += OnStartDateChanged;
+            endDatePicker.OnDateChanged += OnEndDateChanged;
+
+            allDayToggle.onValueChanged.AddListener(OnAllDayChanged);
+            startTimePicker.OnTimeChanged += OnStartTimeChanged;
+            endTimePicker.OnTimeChanged += OnEndTimeChanged;
+
+            reminderToggle.onValueChanged.AddListener(_ => reminderContainer.gameObject.SetActive(reminderToggle.isOn));
+
+            repeatToggle.onValueChanged.AddListener(_ =>
+            {
+                repeatContainer.SetActive(repeatToggle.isOn);
+                UpdateRepeatUntilLabel();
+            });
+            repeatForeverToggle.onValueChanged.AddListener(OnRepeatForeverChanged);
+            repeatUntilDatePicker.OnDateChanged += OnRepeatUntilChanged;
+
+            Init();
+        }
+
+        void OnDestroy()
+        {
+            EditItemContext.Clear();
+        }
+
+        private void Init()
+        {
+            // Add vs edit
+            bool isEditing = !string.IsNullOrEmpty(EditItemContext.EditingItemId);
+            deleteButton.SetActive(isEditing);
+
+            PopulateReminderDropdown();
+            PopulateRepeatDropdown();
+            LoadContext();
+        }
+        
+        private void RefreshDateText()
+        {
+            startDateText.text = AppUtils.FormatDate(_startDate);
+            endDateText.text = AppUtils.FormatDate(_endDate);
+        }
+
+        private void OnStartDateChanged(DateTime newStartDate)
+        {
+            _startDate = newStartDate.Date;
+
+            // If start moved after end, push end forward
+            if (_endDate < _startDate)
+              _endDate = _startDate;
+
+            endDatePicker.SetDate(_endDate);
+            ClampRepeatUntil();
+            RefreshDateText();
+            UpdateRepeatUntilLabel();
+        }
+
+        private void OnEndDateChanged(DateTime newEndDate)
+        {
+            _endDate = newEndDate.Date;
+
+            // End cannot be before start
+            if (_endDate < _startDate)
+              _endDate = _startDate;
+
+            endDatePicker.SetDate(_endDate);
+            RefreshDateText();
+        }
+
+        private void OnStartTimeChanged(DateTime newStart)
+        {
+            if (_suppressTimeEvents) return;
+
+            _suppressTimeEvents = true;
+
+            var newEnd = newStart + _lastDuration;
+            if (newEnd.Date > _endDate)
+            {
+                _endDate = newEnd.Date;
+                endDatePicker.SetDate(_endDate);
+            }
+
+            endTimePicker.SetTime(newEnd);
+            RefreshDateText();
+
+            _suppressTimeEvents = false;
+        }
+
+        private void OnEndTimeChanged(DateTime newEnd)
+        {
+            if (_suppressTimeEvents) return;
+
+            var start = GetStartDateTime();
+            var duration = newEnd - start;
+
+            if (duration > TimeSpan.Zero)
+            {
+              _lastDuration = duration;
+            }
+            else
+            {
+                _lastDuration = TimeSpan.FromHours(1);
+            }
+        }
+
+        private DateTime GetStartDateTime()
+        {
+            return _startDate + startTimePicker.GetTime();
+        }
+
+        private DateTime GetEndDateTime()
+        {
+            return _endDate + endTimePicker.GetTime();
+        }
+
+        private void OnAllDayChanged(bool isAllDay)
+        {
+            if (!isAllDay)
+            {
+                timePickerContainer.SetActive(true);
+                // Normalize to all-day boundaries
+                // Note the date part does not matter since this is just a *time* picker.
+                startTimePicker.SetTime(
+                    new DateTime(1, 1, 1, 0, 0, 0)); // 12:00 AM
+                endTimePicker.SetTime(
+                    new DateTime(1, 1, 1, 0, 0, 0));
+            }
+            else
+                timePickerContainer.SetActive(false);
+        }
+
+        private void OnRepeatForeverChanged(bool isForever)
+        {
+            repeatUntilDatePicker.gameObject.SetActive(!isForever);
+
+            if (!isForever)
+                ClampRepeatUntil();
+
+            UpdateRepeatUntilLabel();
+            LayoutWatcher.Instance?.ForceRelayout();
+        }
+
+        private void OnRepeatUntilChanged(DateTime date)
+        {
+            ClampRepeatUntil();
+            UpdateRepeatUntilLabel();
+        }
+
+        private void ClampRepeatUntil()
+        {
+            DateTime min = _startDate.AddDays(1);
+
+            DateTime current = repeatUntilDatePicker.GetDate();
+
+            if (current <= min)
+                repeatUntilDatePicker.SetDate(min);
+        }
+
+        private void UpdateRepeatUntilLabel()
+        {
+            if (!repeatToggle.isOn)
+            {
+                repeatUntilLabel.gameObject.SetActive(false);
+                return;
+            }
+
+            repeatUntilLabel.gameObject.SetActive(true);
+
+            if (repeatForeverToggle.isOn)
+            {
+                repeatUntilLabel.text = "Forever";
+            }
+            else
+            {
+                DateTime date = repeatUntilDatePicker.GetDate().Date;
+                repeatUntilLabel.text = AppUtils.FormatDate(date);
+            }
+        }
+        
+        void PopulateRepeatDropdown()
+        {
+            repeatUnitDropdown.ClearOptions();
+            repeatUnitDropdown.AddOptions(new System.Collections.Generic.List<string>
+            {
+                "Day",
+                "Week",
+                "Month",
+                "Year"
+            });
+        }
+
+        void PopulateReminderDropdown()
+        {
+            reminderDropdown.ClearOptions();
+            reminderDropdown.AddOptions(new System.Collections.Generic.List<string>
+            {
+                "At time",
+                "10 minutes before",
+                "1 hour before",
+                "1 day before"
+            });
+        }
+
+        void LoadContext()
+        {
+            if (!string.IsNullOrEmpty(EditItemContext.EditingItemId))
+            {
+                // Load item
+                _item = _repo.GetById(EditItemContext.EditingItemId);
+                _originalItem = _item.Clone();
+                var startLocal = _item.StartUtc.ToLocalTime();
+                var endLocal = _item.EndUtc.ToLocalTime();
+
+                _startDate = startLocal.Date;
+                _endDate = endLocal.Date;
+                _lastDuration = endLocal - startLocal;
+                
+                BuildUIFromItem();
+            }
+            else
+            {
+                // New item
+                DateTime baseDate = EditItemContext.SelectedDate ?? DateTime.Today;
+                _startDate = baseDate;
+                _endDate = baseDate;
+                _item = new CalendarItem
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    StartUtc = baseDate.AddHours(9).ToUniversalTime(), // 9am
+                    EndUtc = baseDate.AddHours(10).ToUniversalTime(),
+                    Type = CalendarItemType.Event
+                };
+                BuildUIFromItem();
+            }
+        }
+
+        public void OnNowPressed()
+        {
+            _suppressTimeEvents = true;
+
+            // Ensure time-based mode
+            allDayToggle.isOn = false;
+
+            DateTime now = DateTime.Now;
+
+            // Round UP to next whole hour
+            DateTime start = new DateTime(
+                now.Year,
+                now.Month,
+                now.Day,
+                now.Hour,
+                0,
+                0
+            ).AddHours(1);
+
+            DateTime end = start + _lastDuration;
+
+            // Update dates
+            _startDate = start.Date;
+            _endDate = end.Date;
+
+            startDatePicker.SetDate(_startDate);
+            endDatePicker.SetDate(_endDate);
+
+            // Update times
+            startTimePicker.SetTime(start);
+            endTimePicker.SetTime(end);
+
+            RefreshDateText();
+
+            _suppressTimeEvents = false;
+        }
+
+        public void OnSavePressed()
+        {
+            try
+            {
+                var newItem = BuildItemFromUI();
+                _repo.Save(newItem);
+                // Schedule, reschedule, cancel now-stale notifs
+                NotificationScheduler.SyncNotifications(_originalItem, newItem);
+
+                CalendarRefreshSignal.NeedsRefresh = true;
+                SceneHistoryManager.Instance.GoBack();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError("Failed to save item: " + ex);
+                LoggingService.Warn(LogCategory.DB, "Failed to save item: " + ex);
+            }
+        }
+
+        public void OnCancelPressed()
+        {
+            SceneHistoryManager.Instance.GoBack();
+        }
+
+        public void DeleteItem()
+        {
+            if (string.IsNullOrEmpty(EditItemContext.EditingItemId))
+                return;
+
+            NotificationScheduler.Cancel(_item);
+            _repo.Delete(EditItemContext.EditingItemId);
+
+            CalendarRefreshSignal.NeedsRefresh = true;
+            SceneHistoryManager.Instance.GoBack();
+        }
+
+        public void OnEditPressed()
+        {
+            EditItemContext.Mode = EditItemMode.Edit;
+            Init();
+        }
+
+        void BuildUIFromItem()
+        {
+            // Title & Note
+            titleInput.text = _item.Title;
+            noteInput.text = _item.Note;
+            if (EditItemContext.Mode == EditItemMode.Preview)
+            {
+                titleInput.readOnly = true;
+                noteInput.readOnly = true;
+                // Wrap links for the preview (if links exist)
+                titleInput.text = TMPUtils.Linkify(_item.Title);
+                noteInput.text = TMPUtils.Linkify(_item.Note);
+                titleDecoration.SetActive(false);
+                noteDecoration.SetActive(false);
+                titleInput.gameObject.SetActive(titleInput.text.Length > 0);
+                noteInput.gameObject.SetActive(noteInput.text.Length > 0);
+            }
+            else
+            {
+                titleInput.readOnly = false;
+                noteInput.readOnly = false;
+                titleDecoration.SetActive(true);
+                noteDecoration.SetActive(true);
+                titleInput.gameObject.SetActive(true);
+                noteInput.gameObject.SetActive(true);
+            }
+
+            // All Day/Date/time
+            bool allDay = _item.AllDay;
+            var startLocal = _item.StartUtc.ToLocalTime();
+            var endLocal = _item.EndUtc.ToLocalTime();
+            RefreshDateText();
+            if (EditItemContext.Mode == EditItemMode.Edit)
+            {
+                // All day & time
+                allDayToggle.isOn = allDay;
+                allDayToggle.gameObject.SetActive(true);
+                timePickerContainer.SetActive(!allDay);
+                timeText.gameObject.SetActive(false);
+                if (!allDay)
+                {
+                    startTimePicker.SetTime(startLocal);
+                    endTimePicker.SetTime(endLocal);
+                }
+
+                // Date
+                startDatePicker.SetDate(_startDate);
+                endDatePicker.SetDate(_endDate);
+                _lastDuration = endLocal - startLocal;
+            }
+            else // preview mode
+            {
+                allDayToggle.gameObject.SetActive(false);
+                timePickerContainer.SetActive(false);
+                timeText.gameObject.SetActive(true);
+                //timeText.text = allDay ? "All day" : $"{startLocal:hh:mm tt} – {endLocal:hh:mm tt}";
+                timeText.text = allDay ? "All day" : $"{AppUtils.FormatTime(startLocal)} – {AppUtils.FormatTime(endLocal)}";
+            }
+
+            nowBtn.SetActive(EditItemContext.Mode == EditItemMode.Edit);
+            startDatePicker.gameObject.SetActive(EditItemContext.Mode == EditItemMode.Edit);
+            endDatePicker.gameObject.SetActive(EditItemContext.Mode == EditItemMode.Edit);
+
+            // Color Logic
+            int colorIndex = (int)_item.Color;
+            if (EditItemContext.Mode == EditItemMode.Edit)
+            {
+                // edit mode: Show all buttons and select the current one
+                for (int i = 0; i < colorToggles.Length; i++)
+                {
+                    colorToggles[i].gameObject.SetActive(true);
+                    colorToggles[i].interactable = true;
+                    if (i == colorIndex) 
+                    {
+                        colorToggles[i].isOn = true;
+                    }
+                }
+            }
+            else 
+            {
+                // preview mode: Only show the button matching the item's color
+                for (int i = 0; i < colorToggles.Length; i++)
+                {
+                    bool isCurrentColor = (i == colorIndex);
+                    colorToggles[i].gameObject.SetActive(isCurrentColor);
+        
+                    if (isCurrentColor)
+                    {
+                        colorToggles[i].isOn = true;
+                        // Disable interactivity
+                        colorToggles[i].interactable = false; 
+                    }
+                }
+            }
+
+            // Reminder
+            bool isReminder = _item.Reminder != null;
+            if (EditItemContext.Mode == EditItemMode.Edit)
+            {
+                reminderText.gameObject.SetActive(false);
+                // Set the reminder toggle.
+                // It is always visible in add/edit mode
+                reminderToggle.isOn = isReminder;
+                reminderToggle.gameObject.SetActive(true);
+                // The reminder options are visible only when the toggle is checked.
+                reminderContainer.gameObject.SetActive(isReminder);
+                if (isReminder)
+                {
+                    reminderDropdown.value = Array.IndexOf(ReminderOffsets, _item.Reminder.Offset);
+                    if (reminderDropdown.value < 0)
+                        reminderDropdown.value = 0;
+
+                    reminderDropdown.RefreshShownValue();
+                }
+            }
+            else
+            {
+                // Preview mode
+                reminderToggle.gameObject.SetActive(false);
+                reminderContainer.SetActive(false);
+                if(isReminder)
+                {
+                    reminderText.gameObject.SetActive(true);
+                    reminderText.text = $"Reminder: {DataFormatter.ToString(_item.Reminder)}";
+                }
+                else
+                    reminderText.gameObject.SetActive(false);
+            }
+
+            // Repeat
+            bool repeats = _item.RepeatRule != null;
+            if (EditItemContext.Mode == EditItemMode.Edit)
+            {
+                repeatToggle.gameObject.SetActive(true);
+                repeatText.gameObject.SetActive(false);
+                if (repeats)
+                {
+                    repeatContainer.SetActive(true);
+                    repeatToggle.isOn = true;
+                    repeatIntervalInput.text = (_item.RepeatRule.Interval).ToString();
+                    repeatUnitDropdown.value = (int)_item.RepeatRule.Unit;
+
+                    // Repeat until
+                    bool isForever = !_item.RepeatRule.UntilUtc.HasValue;
+                    repeatForeverToggle.isOn = isForever;
+                    repeatUntilDatePicker.gameObject.SetActive(!isForever);
+
+                    if (!isForever)
+                    {
+                        var untilLocal = _item.RepeatRule.UntilUtc.Value.ToLocalTime().Date;
+                        repeatUntilDatePicker.SetDate(untilLocal);
+                    }
+                    else
+                    {
+                        repeatUntilDatePicker.SetDate(_startDate.AddDays(1));
+                    }
+
+                    ClampRepeatUntil();
+                    UpdateRepeatUntilLabel();
+                }
+                else
+                {
+                    repeatToggle.isOn = false;
+                    repeatContainer.SetActive(false);
+                    repeatForeverToggle.isOn = true;
+                    repeatUntilDatePicker.gameObject.SetActive(false);
+                }
+            }
+            else
+            {
+                // Preview mode. Just print the text.
+                repeatToggle.gameObject.SetActive(false);
+                repeatContainer.SetActive(false);
+                repeatText.gameObject.SetActive(repeats);
+                repeatText.text = repeats ? $"Repeat: {DataFormatter.ToString(_item.RepeatRule)}" : "";
+            }
+
+            // Buttons
+            previewBtns.SetActive(EditItemContext.Mode == EditItemMode.Preview);
+            editBtns.SetActive(EditItemContext.Mode == EditItemMode.Edit);
+        }
+
+        CalendarItem BuildItemFromUI()
+        {
+            DateTime startLocal;
+            DateTime endLocal;
+
+            if (allDayToggle.isOn)
+            {
+                startLocal = _startDate;
+                endLocal = _endDate.AddDays(1);
+            }
+            else
+            {
+                startLocal = _startDate + startTimePicker.GetTime();
+                endLocal = _endDate + endTimePicker.GetTime();
+
+                // Prevent inverted times
+                if (endLocal <= startLocal)
+                    endLocal = startLocal.AddMinutes(5);
+            }
+
+            // Find which toggle is on
+            CalendarItemColor selectedColor = CalendarItemColor.Transparent;
+            for (int i = 0; i < colorToggles.Length; i++)
+            {
+                if (colorToggles[i].isOn)
+                {
+                    selectedColor = (CalendarItemColor)i;
+                    break;
+                }
+            }
+
+            var item = new CalendarItem
+            {
+                Id = _item?.Id ?? Guid.NewGuid().ToString(),
+                Type = reminderToggle.isOn
+                    ? CalendarItemType.Reminder
+                    : CalendarItemType.Event,
+
+                Title = titleInput.text,
+                Note = noteInput.text,
+
+                StartUtc = startLocal.ToUniversalTime(),
+                EndUtc = endLocal.ToUniversalTime(),
+                AllDay = allDayToggle.isOn,
+                Color = selectedColor,
+                RepeatRule = BuildRepeatRule()
+            };
+
+            if (item.Type == CalendarItemType.Reminder)
+            {
+                item.Reminder = new ReminderSettings
+                {
+                    Offset = ReminderOffsets[reminderDropdown.value]
+                };
+            }
+
+            return item;
+        }
+
+        RepeatRule BuildRepeatRule()
+        {
+            if (!repeatToggle.isOn)
+                return null;
+
+            DateTime? until = null;
+            if (!repeatForeverToggle.isOn)
+            {
+                DateTime local = repeatUntilDatePicker.GetDate().Date;
+                until = local.ToUniversalTime();
+            }
+
+            return new RepeatRule
+            {
+                Interval = int.Parse(repeatIntervalInput.text),
+                Unit = (RepeatUnit)repeatUnitDropdown.value,
+                UntilUtc = until
+            };
+        }
+    }
+}
